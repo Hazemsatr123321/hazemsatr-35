@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:smart_iraq/main.dart'; // To get the supabase client and HomeScreen
+import 'package:smart_iraq/main.dart'; // For supabase client
+import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {

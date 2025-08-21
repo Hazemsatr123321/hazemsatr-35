@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/ui/screens/splash_screen.dart';
+import 'package:smart_iraq/src/ui/screens/home_screen.dart'; // Import the new home screen
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,34 +31,6 @@ class SmartIraqApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: const SplashScreen(),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('السوق - العراق الذكي'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await supabase.auth.signOut();
-            },
-            tooltip: 'تسجيل الخروج',
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text(
-          'أهلاً بك في تطبيق العراق الذكي!',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
     );
   }
 }

@@ -11,6 +11,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/ui/screens/auth/login_screen.dart';
 import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
+import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,5 +68,25 @@ void main() {
 
     // Verify that we have navigated to the SignupScreen
     expect(find.byType(SignupScreen), findsOneWidget);
+  });
+
+  testWidgets('ProductCard shows product details correctly', (WidgetTester tester) async {
+    // Create a dummy product
+    final product = Product(
+      id: '1',
+      title: 'منتج اختباري',
+      price: 1500.0,
+      imageUrl: 'https://via.placeholder.com/150', // A placeholder image
+    );
+
+    // Build the ProductCard widget
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: ProductCard(product: product))));
+
+    // Verify that the title and price are displayed
+    expect(find.text('منتج اختباري'), findsOneWidget);
+    expect(find.text('1500.0 د.ع'), findsOneWidget);
+
+    // Verify that the image is being rendered
+    expect(find.byType(Image), findsOneWidget);
   });
 }

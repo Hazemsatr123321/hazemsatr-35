@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart';
+import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/auth/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
