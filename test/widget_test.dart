@@ -13,6 +13,7 @@ import 'package:smart_iraq/src/ui/screens/auth/login_screen.dart';
 import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
+import 'package:smart_iraq/src/ui/screens/product_detail_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -88,5 +89,29 @@ void main() {
 
     // Verify that the image is being rendered
     expect(find.byType(Image), findsOneWidget);
+  });
+
+  testWidgets('Tapping ProductCard navigates to ProductDetailScreen', (WidgetTester tester) async {
+    // Create a dummy product
+    final product = Product(
+      id: '1',
+      title: 'منتج اختباري',
+      price: 1500.0,
+      imageUrl: 'https://via.placeholder.com/150',
+      description: 'وصف اختباري للمنتج.',
+    );
+
+    // Build the ProductCard widget within a MaterialApp to handle navigation
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: ProductCard(product: product))));
+
+    // Tap the card
+    await tester.tap(find.byType(ProductCard));
+    // Wait for the navigation animation to complete
+    await tester.pumpAndSettle();
+
+    // Verify that we have navigated to the ProductDetailScreen
+    expect(find.byType(ProductDetailScreen), findsOneWidget);
+    // Verify that the detail screen shows the correct title
+    expect(find.text('تفاصيل المنتج'), findsOneWidget);
   });
 }
