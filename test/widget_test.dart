@@ -17,6 +17,7 @@ import 'package:smart_iraq/src/ui/screens/product_detail_screen.dart';
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
+import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -167,5 +168,48 @@ void main() {
 
     // Verify that the delete button is present
     expect(find.byIcon(Icons.delete), findsOneWidget);
+  });
+
+  testWidgets('ProductCard shows edit button when showControls is true', (WidgetTester tester) async {
+    // Create a dummy product
+    final product = Product(
+      id: '1',
+      title: 'منتج اختباري',
+      price: 1500.0,
+      imageUrl: 'https://via.placeholder.com/150',
+    );
+
+    // Build the ProductCard widget with showControls set to true
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: ProductCard(
+          product: product,
+          showControls: true,
+          onEdit: () {},
+        ),
+      ),
+    ));
+
+    // Verify that the edit button is present
+    expect(find.byIcon(Icons.edit), findsOneWidget);
+  });
+
+  testWidgets('EditProductScreen is pre-filled with product data', (WidgetTester tester) async {
+    // Create a dummy product
+    final product = Product(
+      id: '1',
+      title: 'منتج اختباري',
+      price: 1500.0,
+      imageUrl: 'https://via.placeholder.com/150',
+      description: 'وصف اختباري للمنتج.',
+    );
+
+    // Build the EditProductScreen
+    await tester.pumpWidget(MaterialApp(home: EditProductScreen(product: product)));
+
+    // Verify that the fields are pre-filled
+    expect(find.text('منتج اختباري'), findsOneWidget);
+    expect(find.text('وصف اختباري للمنتج.'), findsOneWidget);
+    expect(find.text('1500.0'), findsOneWidget);
   });
 }

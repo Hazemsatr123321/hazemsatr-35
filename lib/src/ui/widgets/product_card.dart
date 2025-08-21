@@ -6,12 +6,14 @@ class ProductCard extends StatelessWidget {
   final Product product;
   final bool showControls;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
 
   const ProductCard({
     super.key,
     required this.product,
     this.showControls = false,
     this.onDelete,
+    this.onEdit,
   });
 
   @override
@@ -79,6 +81,11 @@ class ProductCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: onEdit,
+                        tooltip: 'تعديل الإعلان',
+                      ),
                       IconButton(
                         icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                         onPressed: onDelete,
