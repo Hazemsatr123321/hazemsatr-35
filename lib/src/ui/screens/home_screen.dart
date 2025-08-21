@@ -3,6 +3,7 @@ import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
+import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -40,6 +41,15 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('السوق - العراق الذكي'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+            tooltip: 'ملفي الشخصي',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {

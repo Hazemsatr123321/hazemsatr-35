@@ -15,6 +15,8 @@ import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/product_detail_screen.dart';
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
+import 'package:smart_iraq/src/ui/screens/home_screen.dart';
+import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -128,5 +130,18 @@ void main() {
     expect(find.text('الرجاء إدخال عنوان للإعلان'), findsOneWidget);
     expect(find.text('الرجاء إدخال وصف للإعلان'), findsOneWidget);
     expect(find.text('الرجاء إدخال سعر صحيح'), findsOneWidget);
+  });
+
+  testWidgets('Tapping profile button on HomeScreen navigates to ProfileScreen', (WidgetTester tester) async {
+    // Build the HomeScreen
+    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+
+    // Tap the profile icon button
+    await tester.tap(find.byIcon(Icons.person));
+    await tester.pumpAndSettle();
+
+    // Verify that we have navigated to the ProfileScreen
+    expect(find.byType(ProfileScreen), findsOneWidget);
+    expect(find.text('ملفي الشخصي'), findsOneWidget);
   });
 }
