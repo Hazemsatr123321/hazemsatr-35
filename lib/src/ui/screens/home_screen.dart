@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
+import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,6 +71,15 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const AddProductScreen()),
+          );
+        },
+        child: const Icon(Icons.add),
+        tooltip: 'إضافة إعلان جديد',
       ),
     );
   }

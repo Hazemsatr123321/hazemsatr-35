@@ -14,6 +14,7 @@ import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/product_detail_screen.dart';
+import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -113,5 +114,19 @@ void main() {
     expect(find.byType(ProductDetailScreen), findsOneWidget);
     // Verify that the detail screen shows the correct title
     expect(find.text('تفاصيل المنتج'), findsOneWidget);
+  });
+
+  testWidgets('AddProductScreen shows validation errors', (WidgetTester tester) async {
+    // Build the AddProductScreen directly
+    await tester.pumpWidget(const MaterialApp(home: AddProductScreen()));
+
+    // Tap the save button without entering any text
+    await tester.tap(find.widgetWithText(ElevatedButton, 'حفظ الإعلان'));
+    await tester.pump(); // Rebuild the widget to show validation errors
+
+    // Verify that validation errors are shown for all fields
+    expect(find.text('الرجاء إدخال عنوان للإعلان'), findsOneWidget);
+    expect(find.text('الرجاء إدخال وصف للإعلان'), findsOneWidget);
+    expect(find.text('الرجاء إدخال سعر صحيح'), findsOneWidget);
   });
 }
