@@ -4,8 +4,15 @@ import 'package:smart_iraq/src/ui/screens/product_detail_screen.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
+  final bool showControls;
+  final VoidCallback? onDelete;
 
-  const ProductCard({super.key, required this.product});
+  const ProductCard({
+    super.key,
+    required this.product,
+    this.showControls = false,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +74,19 @@ class ProductCard extends StatelessWidget {
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
+                if (showControls) ...[
+                  const Divider(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                        onPressed: onDelete,
+                        tooltip: 'حذف الإعلان',
+                      ),
+                    ],
+                  ),
+                ],
                 ],
               ),
             ),
