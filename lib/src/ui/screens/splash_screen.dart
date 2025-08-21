@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/ui/screens/auth/login_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -9,23 +12,37 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  late final StreamSubscription<AuthState> _authSubscription;
+
   @override
   void initState() {
     super.initState();
-    _redirect();
+    // Listen to auth state changes to navigate the user
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      // Use a post-frame callback to ensure the widget is built before navigating
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        final session = data.session;
+        if (session == null) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (route) => false,
+          );
+        }
+      });
+    });
   }
 
-  Future<void> _redirect() async {
-    // Wait for a short duration to show the splash screen
-    await Future.delayed(const Duration(seconds: 2));
-
-    // In a real app, you would check the user's auth state here.
-    // For now, we'll just navigate to the login screen.
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    }
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
   }
 
   @override

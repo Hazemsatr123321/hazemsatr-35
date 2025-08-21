@@ -6,10 +6,26 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/main.dart';
+import 'package:smart_iraq/src/ui/screens/auth/login_screen.dart';
+import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUpAll(() async {
+    // Mock the shared_preferences plugin
+    SharedPreferences.setMockInitialValues({});
+
+    // Initialize Supabase for testing
+    await Supabase.initialize(
+      url: 'https://mfotgcymwpvbecqfghpg.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mb3RnY3ltd3B2YmVjcWZnaHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNjE5NzAsImV4cCI6MjA3MDkzNzk3MH0.rYtnVSXRXx9VFFY9iPTWTNX5DN3VvrThaAbkV0hLQzs',
+    );
+  });
+
   testWidgets('Splash screen navigates to Login screen', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const SmartIraqApp());
@@ -24,5 +40,31 @@ void main() {
     // Verify that we have navigated to the LoginScreen.
     expect(find.text('تسجيل الدخول'), findsOneWidget);
     expect(find.text('جاري التحميل...'), findsNothing);
+  });
+
+  testWidgets('Login screen validation and navigation', (WidgetTester tester) async {
+    // Build the LoginScreen directly
+    await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
+
+    // Tap the login button without entering any text
+    await tester.tap(find.widgetWithText(ElevatedButton, 'دخول'));
+    await tester.pump(); // Rebuild the widget to show validation errors
+
+    // Verify that validation errors are shown
+    expect(find.text('الرجاء إدخال بريد إلكتروني صحيح'), findsOneWidget);
+    expect(find.text('الرجاء إدخال كلمة المرور'), findsOneWidget);
+
+    // Enter invalid email
+    await tester.enterText(find.byType(TextFormField).at(0), 'invalid-email');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'دخول'));
+    await tester.pump();
+    expect(find.text('الرجاء إدخال بريد إلكتروني صحيح'), findsOneWidget);
+
+    // Navigate to Signup screen
+    await tester.tap(find.text('ليس لديك حساب؟ إنشاء حساب جديد'));
+    await tester.pumpAndSettle();
+
+    // Verify that we have navigated to the SignupScreen
+    expect(find.byType(SignupScreen), findsOneWidget);
   });
 }

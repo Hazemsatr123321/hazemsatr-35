@@ -42,6 +42,15 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('السوق - العراق الذكي'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await supabase.auth.signOut();
+            },
+            tooltip: 'تسجيل الخروج',
+          ),
+        ],
       ),
       body: const Center(
         child: Text(
