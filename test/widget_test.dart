@@ -29,7 +29,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeProductRepository implements ProductRepository {
   @override
-  Future<List<Product>> getProducts({String? query}) async {
+  Future<List<Product>> getProducts({
+    String? query,
+    String? category,
+    bool? sortAscending,
+  }) async {
     // Return an empty list to avoid breaking the UI,
     // as this test doesn't care about the results.
     return [];
@@ -119,6 +123,7 @@ void main() {
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150', // A placeholder image
       userId: 'dummy_user_id',
+      category: 'Test Category',
     );
 
     // Build the ProductCard widget
@@ -141,6 +146,7 @@ void main() {
       imageUrl: 'https://via.placeholder.com/150',
       description: 'وصف اختباري للمنتج.',
       userId: 'dummy_user_id',
+      category: 'Test Category',
     );
 
     // Build the ProductCard widget within a MaterialApp to handle navigation
@@ -197,6 +203,7 @@ void main() {
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150',
       userId: 'dummy_user_id',
+      category: 'Test Category',
     );
 
     // Build the ProductCard widget with showControls set to true
@@ -222,6 +229,7 @@ void main() {
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150',
       userId: 'dummy_user_id',
+      category: 'Test Category',
     );
 
     // Build the ProductCard widget with showControls set to true
@@ -248,6 +256,7 @@ void main() {
       imageUrl: 'https://via.placeholder.com/150',
       description: 'وصف اختباري للمنتج.',
       userId: 'dummy_user_id',
+      category: 'Test Category',
     );
 
     // Build the EditProductScreen
@@ -321,5 +330,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ChatRoomsScreen), findsOneWidget);
+  });
+
+  testWidgets('HomeScreen filter button opens filter sheet', (WidgetTester tester) async {
+    // Build the HomeScreen
+    await tester.pumpWidget(MaterialApp(home: HomeScreen(productRepository: FakeProductRepository())));
+
+    // Tap the filter icon button
+    await tester.tap(find.byIcon(Icons.filter_list));
+    await tester.pumpAndSettle(); // Wait for bottom sheet to animate up
+
+    // Verify that the filter sheet is shown
+    expect(find.text('الفلترة والفرز'), findsOneWidget);
+    expect(find.text('الفرز حسب السعر'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'تطبيق'), findsOneWidget);
   });
 }

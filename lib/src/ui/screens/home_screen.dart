@@ -24,11 +24,13 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Product>> _productsFuture;
   bool _isSearching = false;
   final _searchController = TextEditingController();
+  String? _selectedCategory;
+  bool? _sortAscending;
 
   @override
   void initState() {
     super.initState();
-    _productsFuture = widget.productRepository.getProducts();
+    _fetchData();
   }
 
   @override
@@ -37,9 +39,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _performSearch(String query) {
+  void _fetchData() {
     setState(() {
-      _productsFuture = widget.productRepository.getProducts(query: query);
+      _productsFuture = widget.productRepository.getProducts(
+        query: _searchController.text,
+        category: _selectedCategory,
+        sortAscending: _sortAscending,
+      );
     });
   }
 
@@ -47,8 +53,79 @@ class _HomeScreenState extends State<HomeScreen> {
      _searchController.clear();
      setState(() {
         _isSearching = false;
-        _productsFuture = widget.productRepository.getProducts();
      });
+     _fetchData();
+  }
+
+  void _showFilterSheet() {
+    // Local state for the sheet, only applied on button press
+    String? tempCategory = _selectedCategory;
+    bool? tempSort = _sortAscending;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('الفلترة والفرز', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    initialValue: tempCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'الفئة',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      tempCategory = value.isNotEmpty ? value : null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text('الفرز حسب السعر', style: Theme.of(context).textTheme.titleMedium),
+                  RadioListTile<bool?>(
+                    title: const Text('من الأقل إلى الأعلى'),
+                    value: true,
+                    groupValue: tempSort,
+                    onChanged: (value) => setModalState(() => tempSort = value),
+                  ),
+                  RadioListTile<bool?>(
+                    title: const Text('من الأعلى إلى الأقل'),
+                    value: false,
+                    groupValue: tempSort,
+                    onChanged: (value) => setModalState(() => tempSort = value),
+                  ),
+                   RadioListTile<bool?>(
+                    title: const Text('بدون فرز'),
+                    value: null,
+                    groupValue: tempSort,
+                    onChanged: (value) => setModalState(() => tempSort = value),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedCategory = tempCategory;
+                        _sortAscending = tempSort;
+                      });
+                      _fetchData();
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('تطبيق'),
+                  ),
+                ],
+              ),
+            ),
+            );
+          },
+        );
+      },
+    );
   }
 
   AppBar _buildNormalAppBar() {
@@ -57,12 +134,13 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         IconButton(
           icon: const Icon(Icons.search),
-          onPressed: () {
-            setState(() {
-              _isSearching = true;
-            });
-          },
+          onPressed: () => setState(() => _isSearching = true),
           tooltip: 'بحث',
+        ),
+        IconButton(
+          icon: const Icon(Icons.filter_list),
+          onPressed: _showFilterSheet,
+          tooltip: 'فلترة',
         ),
         IconButton(
           icon: const Icon(Icons.chat),
@@ -87,9 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.logout),
-          onPressed: () async {
-            await supabase.auth.signOut();
-          },
+          onPressed: () => supabase.auth.signOut(),
           tooltip: 'تسجيل الخروج',
         ),
       ],
@@ -111,14 +187,12 @@ class _HomeScreenState extends State<HomeScreen> {
           hintStyle: TextStyle(color: Colors.white70),
         ),
         style: const TextStyle(color: Colors.white),
-        onSubmitted: _performSearch,
+        onSubmitted: (query) => _fetchData(),
       ),
       actions: [
         IconButton(
           icon: const Icon(Icons.clear),
-          onPressed: () {
-            _searchController.clear();
-          },
+          onPressed: () => _searchController.clear(),
         ),
       ],
     );
