@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,9 +17,33 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   bool _isLoading = false;
+  XFile? _selectedImage;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final imageFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 600,
+    );
+    if (imageFile == null) {
+      return;
+    }
+    setState(() {
+      _selectedImage = imageFile;
+    });
+  }
 
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (_selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('الرجاء اختيار صورة للإعلان.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
       return;
     }
 
@@ -26,14 +52,28 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
 
     try {
+      final imageFile = File(_selectedImage!.path);
+      final imageExtension = _selectedImage!.path.split('.').last.toLowerCase();
       final userId = supabase.auth.currentUser!.id;
+      final imagePath = '/$userId/${DateTime.now().toIso8601String()}.$imageExtension';
+
+      // Upload image to Supabase Storage
+      await supabase.storage.from('product-images').upload(
+            imagePath,
+            imageFile,
+            fileOptions: FileOptions(contentType: 'image/$imageExtension'),
+          );
+
+      // Get public URL
+      final imageUrl = supabase.storage.from('product-images').getPublicUrl(imagePath);
+
+      // Insert product record into the database
       await supabase.from('products').insert({
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text.trim()),
         'user_id': userId,
-        // Using a placeholder image as discussed.
-        'image_url': 'https://via.placeholder.com/150/0000FF/808080?Text=Smart+Iraq',
+        'image_url': imageUrl,
       });
 
       if (mounted) {
@@ -44,6 +84,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
         );
         Navigator.of(context).pop();
+      }
+    } on StorageException catch (error) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في رفع الصورة: ${error.message}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     } on PostgrestException catch (error) {
       if (mounted) {
@@ -94,6 +143,35 @@ class _AddProductScreenState extends State<AddProductScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                InkWell(
+                  onTap: _pickImage,
+                  child: Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: _selectedImage == null
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+                                SizedBox(height: 8),
+                                Text('أضف صورة'),
+                              ],
+                            ),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.file(
+                              File(_selectedImage!.path),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 24.0),
                 TextFormField(
                   controller: _titleController,
                   decoration: const InputDecoration(
@@ -141,6 +219,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
+                        key: const Key('saveProductButton'),
                         onPressed: _saveProduct,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),

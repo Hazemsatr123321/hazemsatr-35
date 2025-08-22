@@ -134,7 +134,12 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: AddProductScreen()));
 
     // Tap the save button without entering any text
-    await tester.tap(find.widgetWithText(ElevatedButton, 'حفظ الإعلان'));
+    final saveButton = find.byKey(const Key('saveProductButton'));
+    // We need to scroll down to find the button
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0.0, -500));
+    await tester.pump();
+
+    await tester.tap(saveButton);
     await tester.pump(); // Rebuild the widget to show validation errors
 
     // Verify that validation errors are shown for all fields
@@ -248,5 +253,14 @@ void main() {
     // Verify the normal AppBar is shown again
     expect(find.text('السوق - العراق الذكي'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
+  });
+
+  testWidgets('AddProductScreen shows image picker UI', (WidgetTester tester) async {
+    // Build the AddProductScreen
+    await tester.pumpWidget(const MaterialApp(home: AddProductScreen()));
+
+    // Verify that the image picker placeholder is shown
+    expect(find.byIcon(Icons.add_a_photo), findsOneWidget);
+    expect(find.text('أضف صورة'), findsOneWidget);
   });
 }
