@@ -1,64 +1,120 @@
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final ProductRepository productRepository;
+
+  const HomeScreen({
+    super.key,
+    required this.productRepository,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final Future<List<Product>> _productsFuture;
+  late Future<List<Product>> _productsFuture;
+  bool _isSearching = false;
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _productsFuture = _getProducts();
+    _productsFuture = widget.productRepository.getProducts();
   }
 
-  Future<List<Product>> _getProducts() async {
-    try {
-      // I am assuming the table is named 'products' as per my previous message.
-      final data = await supabase.from('products').select();
-      final products = (data as List).map((json) {
-        return Product.fromJson(json);
-      }).toList();
-      return products;
-    } catch (error) {
-      // In a real app, log this error
-      rethrow;
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
+
+  void _performSearch(String query) {
+    setState(() {
+      _productsFuture = widget.productRepository.getProducts(query: query);
+    });
+  }
+
+  void _clearSearch() {
+     _searchController.clear();
+     setState(() {
+        _isSearching = false;
+        _productsFuture = widget.productRepository.getProducts();
+     });
+  }
+
+  AppBar _buildNormalAppBar() {
+    return AppBar(
+      title: const Text('السوق - العراق الذكي'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: () {
+            setState(() {
+              _isSearching = true;
+            });
+          },
+          tooltip: 'بحث',
+        ),
+        IconButton(
+          icon: const Icon(Icons.person),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            );
+          },
+          tooltip: 'ملفي الشخصي',
+        ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () async {
+            await supabase.auth.signOut();
+          },
+          tooltip: 'تسجيل الخروج',
+        ),
+      ],
+    );
+  }
+
+  AppBar _buildSearchAppBar() {
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: _clearSearch,
+      ),
+      title: TextField(
+        controller: _searchController,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'ابحث عن منتج...',
+          border: InputBorder.none,
+          hintStyle: TextStyle(color: Colors.white70),
+        ),
+        style: const TextStyle(color: Colors.white),
+        onSubmitted: _performSearch,
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            _searchController.clear();
+          },
+        ),
+      ],
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('السوق - العراق الذكي'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
-            tooltip: 'ملفي الشخصي',
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await supabase.auth.signOut();
-            },
-            tooltip: 'تسجيل الخروج',
-          ),
-        ],
-      ),
+      appBar: _isSearching ? _buildSearchAppBar() : _buildNormalAppBar(),
       body: FutureBuilder<List<Product>>(
         future: _productsFuture,
         builder: (context, snapshot) {

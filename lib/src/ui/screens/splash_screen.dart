@@ -4,6 +4,7 @@ import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/auth/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:smart_iraq/src/repositories/product_repository.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -32,7 +33,11 @@ class _SplashScreenState extends State<SplashScreen> {
           );
         } else {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(
+                productRepository: SupabaseProductRepository(),
+              ),
+            ),
             (route) => false,
           );
         }

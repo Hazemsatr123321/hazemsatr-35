@@ -18,8 +18,18 @@ import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
+import 'package:smart_iraq/src/repositories/product_repository.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+
+class FakeProductRepository implements ProductRepository {
+  @override
+  Future<List<Product>> getProducts({String? query}) async {
+    // Return an empty list to avoid breaking the UI,
+    // as this test doesn't care about the results.
+    return [];
+  }
+}
 
 void main() {
   setUpAll(() async {
@@ -135,7 +145,7 @@ void main() {
 
   testWidgets('Tapping profile button on HomeScreen navigates to ProfileScreen', (WidgetTester tester) async {
     // Build the HomeScreen
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpWidget(MaterialApp(home: HomeScreen(productRepository: FakeProductRepository())));
 
     // Tap the profile icon button
     await tester.tap(find.byIcon(Icons.person));
@@ -211,5 +221,32 @@ void main() {
     expect(find.text('منتج اختباري'), findsOneWidget);
     expect(find.text('وصف اختباري للمنتج.'), findsOneWidget);
     expect(find.text('1500.0'), findsOneWidget);
+  });
+
+  testWidgets('HomeScreen search UI toggles correctly', (WidgetTester tester) async {
+    // Build the HomeScreen
+    await tester.pumpWidget(MaterialApp(home: HomeScreen(productRepository: FakeProductRepository())));
+
+    // Initially, the normal AppBar is shown
+    expect(find.text('السوق - العراق الذكي'), findsOneWidget);
+    expect(find.byIcon(Icons.search), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+
+    // Tap the search icon to enter search mode
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pump();
+
+    // Verify the search AppBar is shown
+    expect(find.text('السوق - العراق الذكي'), findsNothing);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+
+    // Tap the back button to exit search mode
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pump();
+
+    // Verify the normal AppBar is shown again
+    expect(find.text('السوق - العراق الذكي'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
   });
 }

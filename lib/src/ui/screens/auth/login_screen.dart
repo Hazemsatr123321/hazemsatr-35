@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
+import 'package:smart_iraq/src/repositories/product_repository.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,7 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
         // in the splash screen. We just need to ensure the state change is caught.
         // For now, we can manually navigate to show the flow.
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(
+              productRepository: SupabaseProductRepository(),
+            ),
+          ),
           (route) => false,
         );
       }
