@@ -7,6 +7,7 @@ import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
+import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ProductRepository productRepository;
@@ -153,6 +154,15 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           tooltip: 'محادثاتي',
+        ),
+        IconButton(
+          icon: const Icon(Icons.volunteer_activism),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const CharityScreen()),
+            );
+          },
+          tooltip: 'الدعم الخيري',
         ),
         IconButton(
           icon: const Icon(Icons.person),

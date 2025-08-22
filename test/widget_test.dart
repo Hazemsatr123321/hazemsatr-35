@@ -24,6 +24,7 @@ import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/models/chat_room_model.dart';
 import 'package:smart_iraq/src/models/message_model.dart';
+import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -349,5 +350,15 @@ void main() {
   testWidgets('SignupScreen has referral code field', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: SignupScreen()));
     expect(find.widgetWithText(TextFormField, 'كود الإحالة (اختياري)'), findsOneWidget);
+  });
+
+  testWidgets('Tapping charity button on HomeScreen navigates to CharityScreen', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(home: HomeScreen(productRepository: FakeProductRepository())));
+
+    await tester.tap(find.byIcon(Icons.volunteer_activism));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CharityScreen), findsOneWidget);
+    expect(find.text('دعم القضايا الخيرية'), findsOneWidget);
   });
 }
