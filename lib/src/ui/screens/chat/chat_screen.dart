@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/message_model.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
   final String roomId;
@@ -20,6 +21,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   late final Stream<List<Message>> _messagesStream;
   final _messageController = TextEditingController();
+  bool _isGeneratingSuggestion = false;
 
   @override
   void initState() {
@@ -39,6 +41,39 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
     } catch (error) {
       // In a real app, show an error message
+    }
+  }
+
+  Future<void> _getAiSuggestion() async {
+    if (_messageController.text.trim().isEmpty) {
+      return;
+    }
+    setState(() {
+      _isGeneratingSuggestion = true;
+    });
+    try {
+      final response = await supabase.functions.invoke(
+        'generate-chat-suggestion',
+        body: {'prompt': _messageController.text.trim()},
+      );
+      if (response.data != null && response.data['suggestion'] != null) {
+        _messageController.text = response.data['suggestion'];
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('حدث خطأ أثناء جلب الاقتراح.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingSuggestion = false;
+        });
+      }
     }
   }
 
@@ -75,7 +110,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     return Align(
                       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
                       child: Card(
-                        color: isMine ? Theme.of(context).primaryColorLight : Colors.grey[300],
+                        color: isMine ? Theme.of(context).colorScheme.primaryContainer : Colors.grey[300],
                         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         child: Padding(
                           padding: const EdgeInsets.all(12.0),
@@ -100,6 +135,20 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
+            _isGeneratingSuggestion
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2.0),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.auto_awesome),
+                    onPressed: _getAiSuggestion,
+                    tooltip: 'اقتراح رسالة (AI)',
+                  ),
             Expanded(
               child: TextField(
                 controller: _messageController,
@@ -114,7 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
               icon: const Icon(Icons.send),
               onPressed: _sendMessage,
               style: IconButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
               ),
             ),

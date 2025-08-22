@@ -333,6 +333,16 @@ void main() {
     expect(find.byType(ChatRoomsScreen), findsOneWidget);
   });
 
+  testWidgets('ChatScreen shows AI assistant button', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(
+        home: ChatScreen(
+      roomId: 'test_room',
+      chatRepository: FakeChatRepository(),
+    )));
+
+    expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
+  });
+
   testWidgets('HomeScreen filter button opens filter sheet', (WidgetTester tester) async {
     // Build the HomeScreen
     await tester.pumpWidget(MaterialApp(home: HomeScreen(productRepository: FakeProductRepository())));
