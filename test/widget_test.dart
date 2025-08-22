@@ -19,6 +19,11 @@ import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
+import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
+import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
+import 'package:smart_iraq/src/repositories/chat_repository.dart';
+import 'package:smart_iraq/src/models/chat_room_model.dart';
+import 'package:smart_iraq/src/models/message_model.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,6 +35,27 @@ class FakeProductRepository implements ProductRepository {
     return [];
   }
 }
+
+class FakeChatRepository implements ChatRepository {
+  @override
+  Future<List<ChatRoom>> getChatRooms() async {
+    return [];
+  }
+
+  @override
+  Stream<List<Message>> getMessagesStream(String roomId) {
+    return Stream.value([]);
+  }
+
+  @override
+  Future<void> sendMessage(String roomId, String content) async {}
+
+  @override
+  Future<String> findOrCreateChatRoom(String otherUserId) async {
+    return 'fake_room_id';
+  }
+}
+
 
 void main() {
   setUpAll(() async {
@@ -92,6 +118,7 @@ void main() {
       title: 'منتج اختباري',
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150', // A placeholder image
+      userId: 'dummy_user_id',
     );
 
     // Build the ProductCard widget
@@ -113,6 +140,7 @@ void main() {
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150',
       description: 'وصف اختباري للمنتج.',
+      userId: 'dummy_user_id',
     );
 
     // Build the ProductCard widget within a MaterialApp to handle navigation
@@ -168,6 +196,7 @@ void main() {
       title: 'منتج اختباري',
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150',
+      userId: 'dummy_user_id',
     );
 
     // Build the ProductCard widget with showControls set to true
@@ -192,6 +221,7 @@ void main() {
       title: 'منتج اختباري',
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150',
+      userId: 'dummy_user_id',
     );
 
     // Build the ProductCard widget with showControls set to true
@@ -217,6 +247,7 @@ void main() {
       price: 1500.0,
       imageUrl: 'https://via.placeholder.com/150',
       description: 'وصف اختباري للمنتج.',
+      userId: 'dummy_user_id',
     );
 
     // Build the EditProductScreen
@@ -262,5 +293,33 @@ void main() {
     // Verify that the image picker placeholder is shown
     expect(find.byIcon(Icons.add_a_photo), findsOneWidget);
     expect(find.text('أضف صورة'), findsOneWidget);
+  });
+
+  testWidgets('ChatRoomsScreen shows login message when logged out', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(home: ChatRoomsScreen(chatRepository: FakeChatRepository())));
+    // Let the FutureBuilder resolve
+    await tester.pumpAndSettle();
+    expect(find.text('الرجاء تسجيل الدخول لعرض المحادثات.'), findsOneWidget);
+  });
+
+  testWidgets('ChatScreen shows basic UI elements', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(
+        home: ChatScreen(
+      roomId: 'test_room',
+      chatRepository: FakeChatRepository(),
+    )));
+
+    expect(find.text('المحادثة'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byIcon(Icons.send), findsOneWidget);
+  });
+
+  testWidgets('Tapping chat button on HomeScreen navigates to ChatRoomsScreen', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(home: HomeScreen(productRepository: FakeProductRepository())));
+
+    await tester.tap(find.byIcon(Icons.chat));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ChatRoomsScreen), findsOneWidget);
   });
 }

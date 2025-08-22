@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/repositories/chat_repository.dart';
+import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -13,6 +16,7 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late final Future<Product> _productFuture;
+  final ChatRepository _chatRepository = SupabaseChatRepository();
 
   @override
   void initState() {
@@ -29,13 +33,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           .single();
       return Product.fromJson(data);
     } catch (error) {
-      // In a real app, log this error
       rethrow;
+    }
+  }
+
+  Future<void> _startChat(String sellerId) async {
+    try {
+      final roomId = await _chatRepository.findOrCreateChatRoom(sellerId);
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              roomId: roomId,
+              chatRepository: _chatRepository,
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('حدث خطأ أثناء بدء المحادثة.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = supabase.auth.currentUser?.id;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('تفاصيل المنتج'),
@@ -54,6 +84,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }
 
           final product = snapshot.data!;
+          final isMyProduct = product.userId == currentUserId;
+
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -102,6 +134,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               fontSize: 16.0,
                             ),
                       ),
+                      const SizedBox(height: 24.0),
+                      if (!isMyProduct)
+                        ElevatedButton.icon(
+                          onPressed: () => _startChat(product.userId),
+                          icon: const Icon(Icons.chat_bubble_outline),
+                          label: const Text('مراسلة البائع'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12.0),
+                            textStyle: const TextStyle(fontSize: 18),
+                          ),
+                        ),
                     ],
                   ),
                 ),

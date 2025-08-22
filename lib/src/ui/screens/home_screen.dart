@@ -5,6 +5,8 @@ import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
+import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
+import 'package:smart_iraq/src/repositories/chat_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   final ProductRepository productRepository;
@@ -61,6 +63,18 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           },
           tooltip: 'بحث',
+        ),
+        IconButton(
+          icon: const Icon(Icons.chat),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) =>
+                    ChatRoomsScreen(chatRepository: SupabaseChatRepository()),
+              ),
+            );
+          },
+          tooltip: 'محادثاتي',
         ),
         IconButton(
           icon: const Icon(Icons.person),
