@@ -4,6 +4,7 @@ class Profile {
   final String? referralCode;
   final int referralCount;
   final DateTime? updatedAt;
+  final String? role;
 
   Profile({
     required this.id,
@@ -11,6 +12,7 @@ class Profile {
     this.referralCode,
     required this.referralCount,
     this.updatedAt,
+    this.role,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class Profile {
       updatedAt: json['updated_at'] == null
           ? null
           : DateTime.parse(json['updated_at'] as String),
+      role: json['role'] as String?,
     );
   }
 }
