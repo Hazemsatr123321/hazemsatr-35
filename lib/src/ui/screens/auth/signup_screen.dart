@@ -14,6 +14,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _referralCodeController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _signUp() async {
@@ -26,10 +27,23 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      await supabase.auth.signUp(
+      final response = await supabase.auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      // After successful signup, handle the referral code if provided
+      if (response.user != null) {
+        final referralCode = _referralCodeController.text.trim();
+        if (referralCode.isNotEmpty) {
+          // Call the Edge Function to handle the referral
+          // The user needs to create this function in their Supabase project.
+          await supabase.functions.invoke('handle_referral', body: {
+            'referral_code': referralCode,
+            'new_user_id': response.user!.id,
+          });
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,6 +87,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _referralCodeController.dispose();
     super.dispose();
   }
 
@@ -87,69 +102,79 @@ class _SignupScreenState extends State<SignupScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'البريد الإلكتروني',
-                  border: OutlineInputBorder(),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'البريد الإلكتروني',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty || !value.contains('@')) {
+                      return 'الرجاء إدخال بريد إلكتروني صحيح';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'الرجاء إدخال بريد إلكتروني صحيح';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'كلمة المرور',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(
+                    labelText: 'كلمة المرور',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty || value.length < 6) {
+                      return 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty || value.length < 6) {
-                    return 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'تأكيد كلمة المرور',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: 'تأكيد كلمة المرور',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value != _passwordController.text) {
+                      return 'كلمتا المرور غير متطابقتين';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value != _passwordController.text) {
-                    return 'كلمتا المرور غير متطابقتين';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24.0),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _signUp,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                const SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _referralCodeController,
+                  decoration: const InputDecoration(
+                    labelText: 'كود الإحالة (اختياري)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 24.0),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _signUp,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        ),
+                        child: const Text('إنشاء الحساب'),
                       ),
-                      child: const Text('إنشاء الحساب'),
-                    ),
-              TextButton(
-                onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                child: const Text('لديك حساب بالفعل؟ تسجيل الدخول'),
-              ),
-            ],
+                TextButton(
+                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                  child: const Text('لديك حساب بالفعل؟ تسجيل الدخول'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

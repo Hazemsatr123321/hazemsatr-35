@@ -345,4 +345,9 @@ void main() {
     expect(find.text('الفرز حسب السعر'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'تطبيق'), findsOneWidget);
   });
+
+  testWidgets('SignupScreen has referral code field', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: SignupScreen()));
+    expect(find.widgetWithText(TextFormField, 'كود الإحالة (اختياري)'), findsOneWidget);
+  });
 }
