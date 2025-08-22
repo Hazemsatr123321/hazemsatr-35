@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/ui/screens/splash_screen.dart';
 import 'package:smart_iraq/src/ui/screens/home_screen.dart'; // Import the new home screen
@@ -26,9 +27,15 @@ class SmartIraqApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'العراق الذكي',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+      theme: ThemeData.from(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: Brightness.light,
+        ),
+      ).copyWith(
+        textTheme: GoogleFonts.cairoTextTheme(
+          Theme.of(context).textTheme,
+        ),
       ),
       home: const SplashScreen(),
     );

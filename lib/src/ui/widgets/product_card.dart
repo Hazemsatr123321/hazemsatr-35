@@ -18,7 +18,10 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -27,77 +30,86 @@ class ProductCard extends StatelessWidget {
         );
       },
       child: Card(
-        elevation: 4.0,
-        margin: const EdgeInsets.all(8.0),
-        clipBehavior: Clip.antiAlias,
+        elevation: 2.0,
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
+          borderRadius: BorderRadius.circular(12.0),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Image
-            SizedBox(
-              height: 150,
-              child: Image.network(
-                product.imageUrl,
-                fit: BoxFit.cover,
-                // Add a loading builder and error builder for better UX
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey));
-                },
-              ),
-            ),
-            // Title and Price
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.title,
-                    style: const TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.network(
+                      product.imageUrl,
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 100,
+                          width: 100,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                        );
+                      },
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    '${product.price} د.ع', // Iraqi Dinar symbol
-                    style: TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).primaryColor,
+                  const SizedBox(width: 16.0),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.title,
+                          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4.0),
+                        if (product.category != null)
+                          Text(
+                            product.category!,
+                            style: textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                          ),
+                        const SizedBox(height: 8.0),
+                        Text(
+                          '${product.price} د.ع',
+                          style: textTheme.titleMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                if (showControls) ...[
-                  const Divider(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: onEdit,
-                        tooltip: 'تعديل الإعلان',
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                        onPressed: onDelete,
-                        tooltip: 'حذف الإعلان',
-                      ),
-                    ],
-                  ),
-                ],
                 ],
               ),
-            ),
-          ],
+              if (showControls) ...[
+                const Divider(height: 24.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: colorScheme.secondary),
+                      onPressed: onEdit,
+                      tooltip: 'تعديل الإعلان',
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: colorScheme.error),
+                      onPressed: onDelete,
+                      tooltip: 'حذف الإعلان',
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
