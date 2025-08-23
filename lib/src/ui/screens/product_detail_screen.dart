@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
-import 'package:smart_iraq/src/repositories/chat_repository.dart';
-import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -16,7 +15,6 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late final Future<Product> _productFuture;
-  final ChatRepository _chatRepository = SupabaseChatRepository();
 
   @override
   void initState() {
@@ -37,35 +35,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  Future<void> _startChat(String sellerId) async {
-    try {
-      final roomId = await _chatRepository.findOrCreateChatRoom(sellerId);
-      if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              roomId: roomId,
-              chatRepository: _chatRepository,
-            ),
-          ),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('حدث خطأ أثناء بدء المحادثة.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currentUserId = supabase.auth.currentUser?.id;
-
     return Scaffold(
       key: const Key('productDetailScreen'),
       body: FutureBuilder<Product>(
@@ -82,92 +53,60 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }
 
           final product = snapshot.data!;
-          final isMyProduct = product.userId == currentUserId;
+          final isMyProduct = product.userId == supabase.auth.currentUser?.id;
 
           return CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 300.0,
+                expandedHeight: 350.0,
                 pinned: true,
+                stretch: true,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: true,
+                  titlePadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
                   title: Text(
                     product.name,
-                    style: const TextStyle(fontSize: 16.0, shadows: [Shadow(blurRadius: 2.0)])
-                  ),
+                    style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 4.0, color: Colors.black54)])
+                  ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.2, curve: Curves.easeOut),
                   background: Hero(
                     tag: 'product-image-${product.id}',
                     child: product.imageUrl != null
                     ? Image.network(
                       product.imageUrl!,
                       fit: BoxFit.cover,
+                      color: Colors.black.withOpacity(0.3),
+                      colorBlendMode: BlendMode.darken,
                       errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 100, color: Colors.grey)),
                     )
                     : Container(color: Colors.grey, child: const Center(child: Icon(Icons.image_not_supported, size: 100, color: Colors.white))),
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.all(16.0),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            product.name,
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          '${product.price} د.ع / ${product.unit_type ?? 'وحدة'}',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
-                      ],
-                    ),
-                    if (product.category != null) ...[
-                      const SizedBox(height: 8.0),
-                      Chip(
-                        label: Text(product.category!),
-                        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-                        labelStyle: TextStyle(color: Theme.of(context).colorScheme.secondary),
-                      ),
-                    ],
-                    const SizedBox(height: 16.0),
-                    const Divider(),
-                    // B2B Info Section
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+              SliverList(
+                delegate: SliverChildListDelegate(
+                  [
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildInfoColumn('الكمية المتوفرة', '${product.stock_quantity ?? 0} ${product.unit_type ?? ''}'),
-                          _buildInfoColumn('أقل كمية للطلب', '${product.minimum_order_quantity ?? 1} ${product.unit_type ?? ''}'),
-                        ],
+                          _buildPriceChip(context, product),
+                          const SizedBox(height: 24.0),
+                          _buildSectionTitle(context, 'تفاصيل الجملة'),
+                          const SizedBox(height: 12.0),
+                          _buildB2BInfoGrid(context, product),
+                          const SizedBox(height: 24.0),
+                          _buildSectionTitle(context, 'الوصف'),
+                          const SizedBox(height: 12.0),
+                          Text(
+                            product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6, color: Colors.black87),
+                          ),
+                        ].animate(interval: 100.ms).fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOut),
                       ),
                     ),
-                    const Divider(),
-                    const SizedBox(height: 16.0),
-                    Text(
-                      'الوصف',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8.0),
-                    Text(
-                      product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 24.0),
                   ]),
-                ),
               ),
             ],
           );
@@ -176,41 +115,107 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
        bottomNavigationBar: FutureBuilder<Product>(
         future: _productFuture,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const SizedBox.shrink();
-          }
-           final product = snapshot.data!;
-           final isMyProduct = product.userId == currentUserId;
+          if (!snapshot.hasData) return const SizedBox.shrink();
+           final isMyProduct = snapshot.data!.userId == supabase.auth.currentUser?.id;
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: isMyProduct
-              ? ElevatedButton.icon(
-                  onPressed: () { /* TODO: Navigate to Edit Product Screen */ },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('تعديل المنتج'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.8)
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: isMyProduct
+                ? ElevatedButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      /* TODO: Navigate to Edit Product Screen */
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('تعديل المنتج'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      backgroundColor: Theme.of(context).colorScheme.secondary
+                    ),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      /* TODO: Navigate to Create Order Screen */
+                    },
+                    icon: const Icon(Icons.shopping_cart_checkout_rounded),
+                    label: const Text('إنشاء طلب شراء'),
+                     style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                )
-              : ElevatedButton.icon(
-                  onPressed: () { /* TODO: Navigate to Create Order Screen */ },
-                  icon: const Icon(Icons.shopping_cart_checkout),
-                  label: const Text('إنشاء طلب شراء'),
-                ),
+            ).animate().slideY(begin: 1, duration: 500.ms, delay: 300.ms, curve: Curves.easeOut),
           );
         },
       ),
     );
   }
 
-  Widget _buildInfoColumn(String title, String value) {
-    return Column(
+  Widget _buildPriceChip(BuildContext context, Product product) {
+    return Chip(
+      avatar: Icon(Icons.sell, color: Theme.of(context).colorScheme.primary),
+      label: Text(
+        '${product.price} د.ع / ${product.unit_type ?? 'وحدة'}',
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buildB2BInfoGrid(BuildContext context, Product product) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 2.5,
       children: [
-        Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
-        const SizedBox(height: 4.0),
-        Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        _buildInfoCard(context, Icons.inventory_2_outlined, 'الكمية المتوفرة', '${product.stock_quantity ?? 0}'),
+        _buildInfoCard(context, Icons.production_quantity_limits, 'أقل كمية للطلب', '${product.minimum_order_quantity ?? 1}'),
       ],
+    );
+  }
+
+  Widget _buildInfoCard(BuildContext context, IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4)
+          )
+        ]
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Theme.of(context).colorScheme.secondary, size: 28),
+          const SizedBox(height: 8),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
+          Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 }

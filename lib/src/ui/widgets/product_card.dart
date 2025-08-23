@@ -25,8 +25,12 @@ class ProductCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ProductDetailScreen(productId: product.id),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => ProductDetailScreen(productId: product.id),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 400),
           ),
         );
       },
