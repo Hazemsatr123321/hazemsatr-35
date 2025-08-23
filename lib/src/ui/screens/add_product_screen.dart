@@ -16,8 +16,73 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
+  final _aiKeywordsController = TextEditingController();
   bool _isLoading = false;
+  bool _isGenerating = false;
   XFile? _selectedImage;
+
+  Future<void> _generateAdCopy() async {
+    if (_aiKeywordsController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('الرجاء إدخال كلمات مفتاحية لوصف المنتج.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isGenerating = true;
+    });
+
+    try {
+      // Call the Supabase Edge Function
+      final response = await supabase.functions.invoke(
+        'generate-ad-copy',
+        body: {'keywords': _aiKeywordsController.text.trim()},
+      );
+
+      if (response.status != 200) {
+        throw FunctionException(
+          status: response.status,
+          details: response.data,
+        );
+      }
+
+      final data = response.data;
+      final String aiTitle = data['title'] ?? 'خطأ في إنشاء العنوان';
+      final String aiDescription = data['description'] ?? 'خطأ في إنشاء الوصف';
+
+      _titleController.text = aiTitle;
+      _descriptionController.text = aiDescription;
+
+    } on FunctionException catch (error) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ من السيرفر: ${error.details ?? 'فشل إنشاء المحتوى'}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ غير متوقع: $error'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+      }
+    }
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -126,6 +191,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
+    _aiKeywordsController.dispose();
     super.dispose();
   }
 
@@ -171,6 +237,65 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           ),
                   ),
                 ),
+                const SizedBox(height: 16.0),
+                // --- AI Generation Section ---
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Theme.of(context).colorScheme.secondary),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.secondary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'إنشاء المحتوى بالذكاء الاصطناعي',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'أدخل كلمات مفتاحية (مثل: "سيارة تويوتا كامري 2022 بيضاء")، وسيقوم الذكاء الاصطناعي بكتابة عنوان ووصف احترافي لإعلانك.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _aiKeywordsController,
+                        decoration: const InputDecoration(
+                          labelText: 'الكلمات المفتاحية',
+                          hintText: 'مثال: لابتوب ديل مستعمل بحالة ممتازة',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _isGenerating
+                            ? const Center(child: CircularProgressIndicator())
+                            : ElevatedButton.icon(
+                                key: const Key('generateWithAIButton'),
+                                onPressed: _generateAdCopy,
+                                icon: const Icon(Icons.auto_awesome),
+                                label: const Text('إنشاء'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+                // --- End AI Generation Section ---
                 const SizedBox(height: 24.0),
                 TextFormField(
                   controller: _titleController,
