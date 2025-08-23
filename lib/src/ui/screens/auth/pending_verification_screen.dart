@@ -1,0 +1,43 @@
+import 'package:flutter/material.dart';
+import 'package:smart_iraq/main.dart';
+
+class PendingVerificationScreen extends StatelessWidget {
+  const PendingVerificationScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.hourglass_top, size: 80, color: Colors.amber),
+              const SizedBox(height: 24),
+              Text(
+                'الحساب قيد المراجعة',
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'شكرًا لتسجيلك. فريقنا يقوم بمراجعة حسابك الآن. سيتم إعلامك فور الموافقة عليه لتتمكن من الوصول الكامل للتطبيق.',
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  // Allow user to sign out and return to login screen
+                  supabase.auth.signOut();
+                },
+                child: const Text('العودة إلى تسجيل الدخول'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

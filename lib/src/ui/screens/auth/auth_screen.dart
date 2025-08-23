@@ -4,6 +4,7 @@ import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:smart_iraq/src/ui/screens/auth/pending_verification_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -27,7 +28,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   final _signupEmailController = TextEditingController();
   final _signupPasswordController = TextEditingController();
   final _signupConfirmPasswordController = TextEditingController();
-  final _signupReferralCodeController = TextEditingController();
+  final _signupBusinessNameController = TextEditingController();
+  final _signupBusinessAddressController = TextEditingController();
+  String _selectedBusinessType = 'retailer'; // 'retailer' or 'wholesaler'
 
   bool _isLoading = false;
 
@@ -51,7 +54,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     _signupEmailController.dispose();
     _signupPasswordController.dispose();
     _signupConfirmPasswordController.dispose();
-    _signupReferralCodeController.dispose();
+    _signupBusinessNameController.dispose();
+    _signupBusinessAddressController.dispose();
     super.dispose();
   }
 
@@ -72,11 +76,19 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     if (!_loginFormKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await supabase.auth.signInWithPassword(
+      final response = await supabase.auth.signInWithPassword(
         email: _loginEmailController.text.trim(),
         password: _loginPasswordController.text.trim(),
       );
-      // Auth listener will handle navigation
+
+      if (response.user != null) {
+        final profile = await supabase.from('profiles').select().eq('id', response.user!.id).single();
+        if (profile['verification_status'] != 'approved') {
+            Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const PendingVerificationScreen()), (route) => false);
+        }
+        // else, the main auth listener will navigate to home
+      }
+
     } on AuthException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -96,21 +108,22 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       final response = await supabase.auth.signUp(
         email: _signupEmailController.text.trim(),
         password: _signupPasswordController.text.trim(),
-      );
-      if (response.user != null) {
-        final referralCode = _signupReferralCodeController.text.trim();
-        if (referralCode.isNotEmpty) {
-          await supabase.functions.invoke('handle_referral', body: {
-            'referral_code': referralCode,
-            'new_user_id': response.user!.id,
-          });
+        data: {
+          'business_name': _signupBusinessNameController.text.trim(),
+          'business_address': _signupBusinessAddressController.text.trim(),
+          'business_type': _selectedBusinessType,
         }
-      }
+      );
+
+      // The handle_new_user trigger in the DB will create the profile.
+      // We just need to inform the user.
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني للتفعيل.'),
+            content: Text('تم إنشاء الحساب بنجاح! حسابك الآن قيد المراجعة من قبل الإدارة.'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
           ),
         );
         _flipCard(); // Flip back to login
@@ -132,7 +145,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       MaterialPageRoute(
         builder: (context) => HomeScreen(
           productRepository: SupabaseProductRepository(),
-          isGuest: true, // Pass guest status
+          isGuest: true,
         ),
       ),
       (route) => false,
@@ -170,7 +183,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   },
                 ),
                 const SizedBox(height: 24),
-                if (!_isLoading)
+                if (!_isLoading && _isLoginView)
                   TextButton(
                     onPressed: _continueAsGuest,
                     child: Text(
@@ -232,7 +245,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           ),
           const SizedBox(height: 24),
           ElevatedButton(onPressed: _signIn, child: const Text('دخول')),
-          TextButton(onPressed: _flipCard, child: const Text('ليس لديك حساب؟ إنشاء حساب')),
+          TextButton(onPressed: _flipCard, child: const Text('ليس لديك حساب؟ إنشاء حساب تاجر')),
         ],
       ),
     );
@@ -245,8 +258,28 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('إنشاء حساب', style: Theme.of(context).textTheme.headlineSmall),
+          Text('إنشاء حساب تاجر جديد', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 24),
+          // Business Type
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment<String>(value: 'retailer', label: Text('صاحب محل'), icon: Icon(Icons.store)),
+              ButtonSegment<String>(value: 'wholesaler', label: Text('تاجر جملة'), icon: Icon(Icons.warehouse)),
+            ],
+            selected: {_selectedBusinessType},
+            onSelectionChanged: (newSelection) {
+              setState(() {
+                _selectedBusinessType = newSelection.first;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _signupBusinessNameController,
+            decoration: const InputDecoration(labelText: 'اسم العمل/المحل'),
+            validator: (v) => v == null || v.isEmpty ? 'اسم العمل مطلوب' : null,
+          ),
+          const SizedBox(height: 16),
           TextFormField(
             controller: _signupEmailController,
             decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
@@ -267,10 +300,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             obscureText: true,
             validator: (v) => v != _signupPasswordController.text ? 'كلمتا المرور غير متطابقتين' : null,
           ),
-          const SizedBox(height: 16),
+           const SizedBox(height: 16),
           TextFormField(
-            controller: _signupReferralCodeController,
-            decoration: const InputDecoration(labelText: 'كود الإحالة (اختياري)'),
+            controller: _signupBusinessAddressController,
+            decoration: const InputDecoration(labelText: 'عنوان العمل (اختياري)'),
           ),
           const SizedBox(height: 24),
           ElevatedButton(onPressed: _signUp, child: const Text('إنشاء الحساب')),

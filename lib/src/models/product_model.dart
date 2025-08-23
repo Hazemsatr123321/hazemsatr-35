@@ -1,37 +1,42 @@
 class Product {
   final String id;
-  final String title;
-  final double price;
-  final String imageUrl;
+  final String name;
   final String? description;
+  final num price;
+  final String? imageUrl;
   final String userId;
   final String? category;
-  final int? viewCount;
-  final int? messageCount;
+
+  // B2B Fields
+  final int? minimum_order_quantity;
+  final int? stock_quantity;
+  final String? unit_type;
 
   Product({
     required this.id,
-    required this.title,
-    required this.price,
-    required this.imageUrl,
+    required this.name,
     this.description,
+    required this.price,
+    this.imageUrl,
     required this.userId,
     this.category,
-    this.viewCount,
-    this.messageCount,
+    this.minimum_order_quantity,
+    this.stock_quantity,
+    this.unit_type,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'].toString(),
-      title: json['title'] as String,
-      price: (json['price'] as num).toDouble(),
-      imageUrl: json['image_url'] as String,
+      id: json['id'] as String,
+      name: json['name'] as String,
       description: json['description'] as String?,
+      price: json['price'] as num,
+      imageUrl: json['image_url'] as String?,
       userId: json['user_id'] as String,
       category: json['category'] as String?,
-      viewCount: json['view_count'] as int?,
-      messageCount: json['message_count'] as int?,
+      minimum_order_quantity: json['minimum_order_quantity'] as int?,
+      stock_quantity: json['stock_quantity'] as int?,
+      unit_type: json['unit_type'] as String?,
     );
   }
 }

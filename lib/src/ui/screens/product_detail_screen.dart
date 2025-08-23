@@ -25,13 +25,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<Product> _getProduct() async {
-    // Increment view count atomically. Fails silently if RPC not created yet.
-    try {
-      await supabase.rpc('increment_view_count', params: {'product_id': widget.productId});
-    } catch (e) {
-      debugPrint('Could not increment view count: $e');
-    }
-
     try {
       final data = await supabase
           .from('products')
@@ -42,44 +35,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (error) {
       rethrow;
     }
-  }
-
-  void _showAnalyticsModal(Product product) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('تحليلات الإعلان', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(Icons.visibility, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text('عدد المشاهدات:', style: Theme.of(context).textTheme.bodyLarge),
-                  const Spacer(),
-                  Text('${product.viewCount ?? 0}', style: Theme.of(context).textTheme.titleLarge),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.message, color: Theme.of(context).colorScheme.secondary),
-                  const SizedBox(width: 8),
-                  Text('عدد الرسائل:', style: Theme.of(context).textTheme.bodyLarge),
-                  const Spacer(),
-                  Text('${product.messageCount ?? 0}', style: Theme.of(context).textTheme.titleLarge),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Future<void> _startChat(String sellerId) async {
@@ -96,7 +51,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         );
       }
     } catch (error) {
-       if (mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('حدث خطأ أثناء بدء المحادثة.'),
@@ -136,20 +91,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
-                    product.title,
+                    product.name,
                     style: const TextStyle(fontSize: 16.0, shadows: [Shadow(blurRadius: 2.0)])
                   ),
                   background: Hero(
                     tag: 'product-image-${product.id}',
-                    child: Image.network(
-                      product.imageUrl,
+                    child: product.imageUrl != null
+                    ? Image.network(
+                      product.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.broken_image, size: 100, color: Colors.grey),
-                        );
-                      },
-                    ),
+                      errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 100, color: Colors.grey)),
+                    )
+                    : Container(color: Colors.grey, child: const Center(child: Icon(Icons.image_not_supported, size: 100, color: Colors.white))),
                   ),
                 ),
               ),
@@ -163,13 +116,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            product.title,
+                            product.name,
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          '${product.price} د.ع',
+                          '${product.price} د.ع / ${product.unit_type ?? 'وحدة'}',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                               ),
@@ -185,6 +138,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                     ],
                     const SizedBox(height: 16.0),
+                    const Divider(),
+                    // B2B Info Section
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildInfoColumn('الكمية المتوفرة', '${product.stock_quantity ?? 0} ${product.unit_type ?? ''}'),
+                          _buildInfoColumn('أقل كمية للطلب', '${product.minimum_order_quantity ?? 1} ${product.unit_type ?? ''}'),
+                        ],
+                      ),
+                    ),
                     const Divider(),
                     const SizedBox(height: 16.0),
                     Text(
@@ -217,21 +186,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             padding: const EdgeInsets.all(16.0),
             child: isMyProduct
               ? ElevatedButton.icon(
-                  onPressed: () => _showAnalyticsModal(product),
-                  icon: const Icon(Icons.bar_chart),
-                  label: const Text('عرض تحليلات الإعلان'),
+                  onPressed: () { /* TODO: Navigate to Edit Product Screen */ },
+                  icon: const Icon(Icons.edit),
+                  label: const Text('تعديل المنتج'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.8)
                   ),
                 )
               : ElevatedButton.icon(
-                  onPressed: () => _startChat(product.userId),
-                  icon: const Icon(Icons.chat_bubble_outline),
-                  label: const Text('مراسلة البائع'),
+                  onPressed: () { /* TODO: Navigate to Create Order Screen */ },
+                  icon: const Icon(Icons.shopping_cart_checkout),
+                  label: const Text('إنشاء طلب شراء'),
                 ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildInfoColumn(String title, String value) {
+    return Column(
+      children: [
+        Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
+        const SizedBox(height: 4.0),
+        Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }
