@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,9 +18,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _aiKeywordsController = TextEditingController();
+  String? _selectedCategory;
   bool _isLoading = false;
   bool _isGenerating = false;
   XFile? _selectedImage;
+
+  final List<String> _categories = const [
+    'إلكترونيات',
+    'ملابس',
+    'أثاث',
+    'مركبات',
+    'عقارات',
+    'مواد غذائية',
+    'غير ذلك',
+  ];
 
   Future<void> _generateAdCopy() async {
     if (_aiKeywordsController.text.trim().isEmpty) {
@@ -84,6 +96,61 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
+  Future<void> _getCategoryFromImage(XFile imageFile) async {
+    setState(() {
+      _isGenerating = true; // Reuse the same loading flag for simplicity
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('جاري تحليل الصورة لاقتراح فئة...'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+
+    try {
+      final imageBytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(imageBytes);
+
+      final response = await supabase.functions.invoke(
+        'categorize-image',
+        body: {'image': base64Image},
+      );
+
+      if (response.status != 200) {
+        throw FunctionException(
+          status: response.status,
+          details: response.data,
+        );
+      }
+
+      final suggestedCategory = response.data['category'] as String?;
+      if (suggestedCategory != null && _categories.contains(suggestedCategory)) {
+        setState(() {
+          _selectedCategory = suggestedCategory;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم اقتراح الفئة: $suggestedCategory'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FunctionException catch (error) {
+      // Silently fail for now, as this is an enhancement, not a critical path.
+      // A snackbar could be shown here if desired.
+      debugPrint('Error categorizing image: ${error.details}');
+    } catch (error) {
+      debugPrint('Unexpected error categorizing image: $error');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+      }
+    }
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final imageFile = await picker.pickImage(
@@ -96,6 +163,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() {
       _selectedImage = imageFile;
     });
+    // After picking the image, try to categorize it
+    _getCategoryFromImage(imageFile);
   }
 
   Future<void> _saveProduct() async {
@@ -139,6 +208,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         'price': double.parse(_priceController.text.trim()),
         'user_id': userId,
         'image_url': imageUrl,
+        'category': _selectedCategory,
       });
 
       if (mounted) {
@@ -336,6 +406,31 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty || double.tryParse(value) == null) {
                       return 'الرجاء إدخال سعر صحيح';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16.0),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'الفئة',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _categories.map((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedCategory = newValue;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'الرجاء اختيار فئة للإعلان';
                     }
                     return null;
                   },

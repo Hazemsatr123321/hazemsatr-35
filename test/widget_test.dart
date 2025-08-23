@@ -181,6 +181,7 @@ void main() {
     expect(find.text('الرجاء إدخال عنوان للإعلان'), findsOneWidget);
     expect(find.text('الرجاء إدخال وصف للإعلان'), findsOneWidget);
     expect(find.text('الرجاء إدخال سعر صحيح'), findsOneWidget);
+    expect(find.text('الرجاء اختيار فئة للإعلان'), findsOneWidget);
   });
 
   testWidgets('Tapping profile button on HomeScreen navigates to ProfileScreen', (WidgetTester tester) async {
@@ -248,7 +249,7 @@ void main() {
     expect(find.byIcon(Icons.edit), findsOneWidget);
   });
 
-  testWidgets('EditProductScreen is pre-filled with product data', (WidgetTester tester) async {
+  testWidgets('EditProductScreen is pre-filled with product data and category', (WidgetTester tester) async {
     // Create a dummy product
     final product = Product(
       id: '1',
@@ -257,7 +258,7 @@ void main() {
       imageUrl: 'https://via.placeholder.com/150',
       description: 'وصف اختباري للمنتج.',
       userId: 'dummy_user_id',
-      category: 'Test Category',
+      category: 'إلكترونيات', // Use a category from the predefined list
     );
 
     // Build the EditProductScreen
@@ -267,6 +268,9 @@ void main() {
     expect(find.text('منتج اختباري'), findsOneWidget);
     expect(find.text('وصف اختباري للمنتج.'), findsOneWidget);
     expect(find.text('1500.0'), findsOneWidget);
+
+    // Verify that the category dropdown is pre-filled
+    expect(find.widgetWithText(DropdownButtonFormField<String>, 'إلكترونيات'), findsOneWidget);
   });
 
   testWidgets('HomeScreen search UI toggles correctly', (WidgetTester tester) async {

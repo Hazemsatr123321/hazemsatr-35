@@ -17,8 +17,19 @@ class _EditProductScreenState extends State<EditProductScreen> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _priceController;
   final _aiKeywordsController = TextEditingController();
+  String? _selectedCategory;
   bool _isLoading = false;
   bool _isGenerating = false;
+
+  final List<String> _categories = const [
+    'إلكترونيات',
+    'ملابس',
+    'أثاث',
+    'مركبات',
+    'عقارات',
+    'مواد غذائية',
+    'غير ذلك',
+  ];
 
   Future<void> _generateAdCopy() async {
     if (_aiKeywordsController.text.trim().isEmpty) {
@@ -89,6 +100,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _titleController = TextEditingController(text: widget.product.title);
     _descriptionController = TextEditingController(text: widget.product.description);
     _priceController = TextEditingController(text: widget.product.price.toString());
+    // Ensure the product's category is valid before setting it
+    if (widget.product.category != null && _categories.contains(widget.product.category)) {
+      _selectedCategory = widget.product.category;
+    }
   }
 
   Future<void> _updateProduct() async {
@@ -105,6 +120,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text.trim()),
+        'category': _selectedCategory,
       }).eq('id', widget.product.id);
 
       if (mounted) {
@@ -265,6 +281,31 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty || double.tryParse(value) == null) {
                       return 'الرجاء إدخال سعر صحيح';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16.0),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'الفئة',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _categories.map((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedCategory = newValue;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'الرجاء اختيار فئة للإعلان';
                     }
                     return null;
                   },
