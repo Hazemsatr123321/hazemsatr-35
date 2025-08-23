@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/models/managed_ad_model.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
+import 'package:smart_iraq/src/ui/widgets/managed_ad_card.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card_shimmer.dart';
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
+import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
   final ProductRepository productRepository;
@@ -23,7 +26,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<Product>> _productsFuture;
+  late Future<List<dynamic>> _feedFuture;
   bool _isSearching = false;
   final _searchController = TextEditingController();
   String? _selectedCategory;
@@ -41,26 +44,49 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Future<List<ManagedAd>> _getManagedAds() async {
+    try {
+      final data = await supabase.from('managed_ads').select().eq('is_active', true);
+      return (data as List).map((json) => ManagedAd.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Could not fetch managed ads: $e');
+      return [];
+    }
+  }
+
   void _fetchData() {
     setState(() {
-      _productsFuture = widget.productRepository.getProducts(
-        query: _searchController.text,
-        category: _selectedCategory,
-        sortAscending: _sortAscending,
-      );
+      _feedFuture = _getCombinedFeed();
     });
+  }
+
+  Future<List<dynamic>> _getCombinedFeed() async {
+    final productsFuture = widget.productRepository.getProducts(
+      query: _searchController.text,
+      category: _selectedCategory,
+      sortAscending: _sortAscending,
+    );
+    final managedAdsFuture = _getManagedAds();
+
+    final results = await Future.wait([productsFuture, managedAdsFuture]);
+    final products = results[0] as List<Product>;
+    final managedAds = results[1] as List<ManagedAd>;
+
+    List<dynamic> combinedList = List.from(products);
+    if (managedAds.isNotEmpty) {
+      final adIndex = min(4, combinedList.length);
+      combinedList.insert(adIndex, managedAds.first);
+    }
+    return combinedList;
   }
 
   void _clearSearch() {
      _searchController.clear();
-     setState(() {
-        _isSearching = false;
-     });
+     setState(() { _isSearching = false; });
      _fetchData();
   }
 
   void _showFilterSheet() {
-    // Local state for the sheet, only applied on button press
     String? tempCategory = _selectedCategory;
     bool? tempSort = _sortAscending;
 
@@ -77,52 +103,47 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('الفلترة والفرز', style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: tempCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'الفئة',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      initialValue: tempCategory,
+                      decoration: const InputDecoration(labelText: 'الفئة'),
+                      onChanged: (value) => tempCategory = value.isNotEmpty ? value : null,
                     ),
-                    onChanged: (value) {
-                      tempCategory = value.isNotEmpty ? value : null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Text('الفرز حسب السعر', style: Theme.of(context).textTheme.titleMedium),
-                  RadioListTile<bool?>(
-                    title: const Text('من الأقل إلى الأعلى'),
-                    value: true,
-                    groupValue: tempSort,
-                    onChanged: (value) => setModalState(() => tempSort = value),
-                  ),
-                  RadioListTile<bool?>(
-                    title: const Text('من الأعلى إلى الأقل'),
-                    value: false,
-                    groupValue: tempSort,
-                    onChanged: (value) => setModalState(() => tempSort = value),
-                  ),
-                   RadioListTile<bool?>(
-                    title: const Text('بدون فرز'),
-                    value: null,
-                    groupValue: tempSort,
-                    onChanged: (value) => setModalState(() => tempSort = value),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _selectedCategory = tempCategory;
-                        _sortAscending = tempSort;
-                      });
-                      _fetchData();
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('تطبيق'),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Text('الفرز حسب السعر', style: Theme.of(context).textTheme.titleMedium),
+                    RadioListTile<bool?>(
+                      title: const Text('من الأقل إلى الأعلى'),
+                      value: true,
+                      groupValue: tempSort,
+                      onChanged: (value) => setModalState(() => tempSort = value),
+                    ),
+                    RadioListTile<bool?>(
+                      title: const Text('من الأعلى إلى الأقل'),
+                      value: false,
+                      groupValue: tempSort,
+                      onChanged: (value) => setModalState(() => tempSort = value),
+                    ),
+                    RadioListTile<bool?>(
+                      title: const Text('بدون فرز'),
+                      value: null,
+                      groupValue: tempSort,
+                      onChanged: (value) => setModalState(() => tempSort = value),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedCategory = tempCategory;
+                          _sortAscending = tempSort;
+                        });
+                        _fetchData();
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('تطبيق'),
+                    ),
+                  ],
+                ),
               ),
-            ),
             );
           },
         );
@@ -134,134 +155,69 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppBar(
       title: const Text('السوق - العراق الذكي'),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: () => setState(() => _isSearching = true),
-          tooltip: 'بحث',
-        ),
-        IconButton(
-          icon: const Icon(Icons.filter_list),
-          onPressed: _showFilterSheet,
-          tooltip: 'فلترة',
-        ),
-        IconButton(
-          icon: const Icon(Icons.chat),
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) =>
-                    ChatRoomsScreen(chatRepository: SupabaseChatRepository()),
-              ),
-            );
-          },
-          tooltip: 'محادثاتي',
-        ),
-        IconButton(
-          icon: const Icon(Icons.volunteer_activism),
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const CharityScreen()),
-            );
-          },
-          tooltip: 'الدعم الخيري',
-        ),
-        IconButton(
-          icon: const Icon(Icons.person),
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            );
-          },
-          tooltip: 'ملفي الشخصي',
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () => supabase.auth.signOut(),
-          tooltip: 'تسجيل الخروج',
-        ),
+        IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _isSearching = true)),
+        IconButton(icon: const Icon(Icons.filter_list), onPressed: _showFilterSheet),
+        IconButton(icon: const Icon(Icons.chat), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => ChatRoomsScreen(chatRepository: SupabaseChatRepository())))),
+        IconButton(icon: const Icon(Icons.volunteer_activism), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CharityScreen()))),
+        IconButton(icon: const Icon(Icons.person), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ProfileScreen()))),
+        IconButton(icon: const Icon(Icons.logout), onPressed: () => supabase.auth.signOut()),
       ],
     );
   }
 
   AppBar _buildSearchAppBar() {
     return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: _clearSearch,
-      ),
+      leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _clearSearch),
       title: TextField(
         controller: _searchController,
         autofocus: true,
-        decoration: const InputDecoration(
-          hintText: 'ابحث عن منتج...',
-          border: InputBorder.none,
-          hintStyle: TextStyle(color: Colors.white70),
-        ),
+        decoration: const InputDecoration(hintText: 'ابحث عن منتج...', border: InputBorder.none, hintStyle: TextStyle(color: Colors.white70)),
         style: const TextStyle(color: Colors.white),
         onSubmitted: (query) => _fetchData(),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () => _searchController.clear(),
-        ),
-      ],
+      actions: [IconButton(icon: const Icon(Icons.clear), onPressed: () => _searchController.clear())],
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _isSearching ? _buildSearchAppBar() : _buildNormalAppBar(),
-      body: FutureBuilder<List<Product>>(
-        future: _productsFuture,
+      body: FutureBuilder<List<dynamic>>(
+        future: _feedFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return GridView.builder(
               padding: const EdgeInsets.all(12.0),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12.0,
-                mainAxisSpacing: 12.0,
-                childAspectRatio: 0.7,
+                crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
               ),
-              itemCount: 6, // Show 6 shimmer cards while loading
+              itemCount: 8,
               itemBuilder: (context, index) => const ProductCardShimmer(),
             );
           }
-          if (snapshot.hasError) {
-            return Center(child: Text('حدث خطأ: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('لا توجد إعلانات لعرضها حالياً.'));
-          }
+          if (snapshot.hasError) return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+          if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('لا توجد إعلانات لعرضها حالياً.'));
 
-          final products = snapshot.data!;
+          final feedItems = snapshot.data!;
           return GridView.builder(
             padding: const EdgeInsets.all(12.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, // 2 cards per row
-              crossAxisSpacing: 12.0,
-              mainAxisSpacing: 12.0,
-              childAspectRatio: 0.7, // Adjust this ratio to fit your card's new design
+              crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
             ),
-            itemCount: products.length,
+            itemCount: feedItems.length,
             itemBuilder: (context, index) {
-              final product = products[index];
-              return ProductCard(product: product);
+              final item = feedItems[index];
+              if (item is ManagedAd) return ManagedAdCard(ad: item);
+              if (item is Product) return ProductCard(product: item);
+              return const SizedBox.shrink();
             },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => const AddProductScreen()),
-          );
-        },
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProductScreen())),
         child: const Icon(Icons.add),
-        tooltip: 'إضافة إعلان جديد',
       ),
     );
   }

@@ -38,6 +38,7 @@ dependencies:
   image_picker: ^1.2.0
   google_fonts: ^6.3.0
   shimmer: ^3.0.0
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

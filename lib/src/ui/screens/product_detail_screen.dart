@@ -25,6 +25,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<Product> _getProduct() async {
+    // Increment view count atomically. Fails silently if RPC not created yet.
+    try {
+      await supabase.rpc('increment_view_count', params: {'product_id': widget.productId});
+    } catch (e) {
+      debugPrint('Could not increment view count: $e');
+    }
+
     try {
       final data = await supabase
           .from('products')
@@ -35,6 +42,44 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (error) {
       rethrow;
     }
+  }
+
+  void _showAnalyticsModal(Product product) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('تحليلات الإعلان', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.visibility, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text('عدد المشاهدات:', style: Theme.of(context).textTheme.bodyLarge),
+                  const Spacer(),
+                  Text('${product.viewCount ?? 0}', style: Theme.of(context).textTheme.titleLarge),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.message, color: Theme.of(context).colorScheme.secondary),
+                  const SizedBox(width: 8),
+                  Text('عدد الرسائل:', style: Theme.of(context).textTheme.bodyLarge),
+                  const Spacer(),
+                  Text('${product.messageCount ?? 0}', style: Theme.of(context).textTheme.titleLarge),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _startChat(String sellerId) async {
@@ -163,20 +208,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         future: _productFuture,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const SizedBox.shrink(); // Show nothing if product hasn't loaded
+            return const SizedBox.shrink();
           }
            final product = snapshot.data!;
            final isMyProduct = product.userId == currentUserId;
-           if (isMyProduct) {
-             return const SizedBox.shrink(); // Don't show button for own product
-           }
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              onPressed: () => _startChat(product.userId),
-              icon: const Icon(Icons.chat_bubble_outline),
-              label: const Text('مراسلة البائع'),
-            ),
+            child: isMyProduct
+              ? ElevatedButton.icon(
+                  onPressed: () => _showAnalyticsModal(product),
+                  icon: const Icon(Icons.bar_chart),
+                  label: const Text('عرض تحليلات الإعلان'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.8)
+                  ),
+                )
+              : ElevatedButton.icon(
+                  onPressed: () => _startChat(product.userId),
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text('مراسلة البائع'),
+                ),
           );
         },
       ),
