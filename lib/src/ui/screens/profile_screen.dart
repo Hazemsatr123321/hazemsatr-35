@@ -114,7 +114,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ملفي الشخصي')),
       body: FutureBuilder<Profile>(
         future: _profileFuture,
         builder: (context, profileSnapshot) {
@@ -128,21 +127,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final profile = profileSnapshot.data!;
           final isAdmin = profile.role == 'admin';
 
-          return ListView(
-            children: [
-              _buildProfileHeader(profile),
-              const Divider(),
-              _buildReferralSection(profile),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  isAdmin ? 'جميع الإعلانات' : 'إعلاناتي',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          return NestedScrollView(
+            key: const Key('profileScreen'),
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverAppBar(
+                  expandedHeight: 200.0,
+                  floating: false,
+                  pinned: true,
+                  flexibleSpace: FlexibleSpaceBar(
+                    title: Text(profile.role == 'admin' ? 'لوحة تحكم المدير' : 'ملفي الشخصي'),
+                    background: _buildProfileHeader(profile),
+                  ),
                 ),
-              ),
-              _buildProductList(isAdmin),
-            ],
+              ];
+            },
+            body: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: _buildReferralSection(profile)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Text(
+                      isAdmin ? 'جميع الإعلانات في التطبيق' : 'إعلاناتي',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                ),
+                _buildProductGrid(isAdmin),
+              ],
+            ),
           );
         },
       ),
@@ -150,21 +164,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(Profile profile) {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(16.0),
-      child: Row(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.person_pin, size: 50, color: Colors.white),
+            const SizedBox(height: 12),
+            Text(
+              _user?.email ?? 'مستخدم غير معروف',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white),
+            ),
+            if (profile.role == 'admin')
+              Chip(
+                label: const Text('مدير النظام'),
+                backgroundColor: Colors.white.withOpacity(0.9),
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReferralSection(Profile profile) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(15.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.person, size: 40, color: Colors.grey),
-          const SizedBox(width: 16.0),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Text('نظام الإحالة', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          Row(
             children: [
-              Text(_user?.email ?? 'مستخدم غير معروف', style: Theme.of(context).textTheme.titleLarge),
-              if (profile.role == 'admin')
-                Text(
-                  'مدير النظام',
-                  style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+              Text('الكود الخاص بك: ', style: Theme.of(context).textTheme.bodyLarge),
+              const Spacer(),
+              SelectableText(
+                profile.referralCode ?? 'N/A',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
                 ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                   if (profile.referralCode != null) {
+                    Clipboard.setData(ClipboardData(text: profile.referralCode!));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم نسخ كود الإحالة!')),
+                    );
+                  }
+                },
+                child: Icon(Icons.copy, size: 18, color: colorScheme.secondary),
+              )
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text('عدد الإحالات الناجحة: ', style: Theme.of(context).textTheme.bodyLarge),
+              const Spacer(),
+              Text(
+                '${profile.referralCount}',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ],
@@ -172,75 +260,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildReferralSection(Profile profile) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('نظام الإحالة', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          SelectableText.rich(
-            TextSpan(
-              text: 'كود الإحالة الخاص بك: ',
-              children: [
-                TextSpan(
-                  text: profile.referralCode ?? 'لا يوجد',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text('عدد الإحالات: ${profile.referralCount}'),
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            onPressed: () {
-              if (profile.referralCode != null) {
-                Clipboard.setData(ClipboardData(text: profile.referralCode!));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('تم نسخ كود الإحالة!')),
-                );
-              }
-            },
-            icon: const Icon(Icons.copy),
-            label: const Text('نسخ الكود'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProductList(bool isAdmin) {
+  Widget _buildProductGrid(bool isAdmin) {
     return FutureBuilder<List<Product>>(
       future: _getProducts(isAdmin: isAdmin),
       builder: (context, productSnapshot) {
         if (productSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          // You could use a shimmer grid here as well for consistency
+          return const SliverToBoxAdapter(
+            child: Center(child: CircularProgressIndicator()),
+          );
         }
         if (productSnapshot.hasError) {
-          return Center(child: Text('حدث خطأ: ${productSnapshot.error}'));
+          return SliverToBoxAdapter(child: Center(child: Text('حدث خطأ: ${productSnapshot.error}')));
         }
         if (!productSnapshot.hasData || productSnapshot.data!.isEmpty) {
-          return Center(child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(isAdmin ? 'لا توجد إعلانات.' : 'لم تقم بنشر أي إعلانات بعد.'),
-          ));
+          return SliverToBoxAdapter(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Text(isAdmin ? 'لا توجد إعلانات.' : 'لم تقم بنشر أي إعلانات بعد.'),
+              ),
+            ),
+          );
         }
         final products = productSnapshot.data!;
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return ProductCard(
-              product: product,
-              showControls: isAdmin || product.userId == _user?.id,
-              onDelete: () => _deleteProduct(product),
-              onEdit: () => _editProduct(product),
-            );
-          },
+        return SliverPadding(
+          padding: const EdgeInsets.all(12.0),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.0,
+              mainAxisSpacing: 12.0,
+              childAspectRatio: 0.65, // Adjust ratio for controls
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final product = products[index];
+                return ProductCard(
+                  product: product,
+                  showControls: isAdmin || product.userId == _user?.id,
+                  onDelete: () => _deleteProduct(product),
+                  onEdit: () => _editProduct(product),
+                );
+              },
+              childCount: products.length,
+            ),
+          ),
         );
       },
     );

@@ -67,9 +67,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final currentUserId = supabase.auth.currentUser?.id;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('تفاصيل المنتج'),
-      ),
+      key: const Key('productDetailScreen'),
       body: FutureBuilder<Product>(
         future: _productFuture,
         builder: (context, snapshot) {
@@ -86,69 +84,98 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           final product = snapshot.data!;
           final isMyProduct = product.userId == currentUserId;
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Image.network(
-                  product.imageUrl,
-                  height: 300,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.broken_image, size: 100, color: Colors.grey),
-                    );
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.title,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 8.0),
-                      Text(
-                        '${product.price} د.ع',
-                        style: TextStyle(
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 16.0),
-                      const Divider(),
-                      const SizedBox(height: 16.0),
-                      Text(
-                        'الوصف',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8.0),
-                      Text(
-                        product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontSize: 16.0,
-                            ),
-                      ),
-                      const SizedBox(height: 24.0),
-                      if (!isMyProduct)
-                        ElevatedButton.icon(
-                          onPressed: () => _startChat(product.userId),
-                          icon: const Icon(Icons.chat_bubble_outline),
-                          label: const Text('مراسلة البائع'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12.0),
-                            textStyle: const TextStyle(fontSize: 18),
-                          ),
-                        ),
-                    ],
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 300.0,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    product.title,
+                    style: const TextStyle(fontSize: 16.0, shadows: [Shadow(blurRadius: 2.0)])
+                  ),
+                  background: Hero(
+                    tag: 'product-image-${product.id}',
+                    child: Image.network(
+                      product.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ],
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.all(16.0),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            product.title,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          '${product.price} د.ع',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                      ],
+                    ),
+                    if (product.category != null) ...[
+                      const SizedBox(height: 8.0),
+                      Chip(
+                        label: Text(product.category!),
+                        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                        labelStyle: TextStyle(color: Theme.of(context).colorScheme.secondary),
+                      ),
+                    ],
+                    const SizedBox(height: 16.0),
+                    const Divider(),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      'الوصف',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8.0),
+                    Text(
+                      product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 24.0),
+                  ]),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+       bottomNavigationBar: FutureBuilder<Product>(
+        future: _productFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const SizedBox.shrink(); // Show nothing if product hasn't loaded
+          }
+           final product = snapshot.data!;
+           final isMyProduct = product.userId == currentUserId;
+           if (isMyProduct) {
+             return const SizedBox.shrink(); // Don't show button for own product
+           }
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton.icon(
+              onPressed: () => _startChat(product.userId),
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: const Text('مراسلة البائع'),
             ),
           );
         },

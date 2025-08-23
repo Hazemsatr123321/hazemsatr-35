@@ -29,87 +29,106 @@ class ProductCard extends StatelessWidget {
           ),
         );
       },
-      child: Card(
-        elevation: 2.0,
-        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(15.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              spreadRadius: 1,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.network(
-                      product.imageUrl,
-                      height: 100,
-                      width: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 100,
-                          width: 100,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
-                        );
-                      },
-                    ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Image Section ---
+            Expanded(
+              flex: 3,
+              child: Hero(
+                tag: 'product-image-${product.id}',
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(15.0),
+                    topRight: Radius.circular(15.0),
                   ),
-                  const SizedBox(width: 16.0),
-                  Expanded(
-                    child: Column(
+                  child: Image.network(
+                    product.imageUrl,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            // --- Text Content Section ---
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Title and Category
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           product.title,
-                          style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          style: textTheme.titleLarge?.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4.0),
-                        if (product.category != null)
+                        if (product.category != null) ...[
+                          const SizedBox(height: 4.0),
                           Text(
                             product.category!,
-                            style: textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                            style: textTheme.bodyMedium?.copyWith(color: colorScheme.secondary),
                           ),
-                        const SizedBox(height: 8.0),
-                        Text(
-                          '${product.price} د.ع',
-                          style: textTheme.titleMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        ],
                       ],
                     ),
-                  ),
-                ],
-              ),
-              if (showControls) ...[
-                const Divider(height: 24.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit, color: colorScheme.secondary),
-                      onPressed: onEdit,
-                      tooltip: 'تعديل الإعلان',
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete, color: colorScheme.error),
-                      onPressed: onDelete,
-                      tooltip: 'حذف الإعلان',
+                    // Price
+                    Text(
+                      '${product.price} د.ع',
+                      style: textTheme.titleLarge?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
-              ],
+              ),
+            ),
+            // --- Controls Section ---
+            if (showControls) ...[
+              const Divider(height: 1, thickness: 1),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton.icon(
+                    icon: Icon(Icons.edit, size: 18, color: colorScheme.secondary.withOpacity(0.8)),
+                    label: Text('تعديل', style: TextStyle(color: colorScheme.secondary.withOpacity(0.8))),
+                    onPressed: onEdit,
+                  ),
+                  TextButton.icon(
+                    icon: Icon(Icons.delete, size: 18, color: colorScheme.error.withOpacity(0.8)),
+                    label: Text('حذف', style: TextStyle(color: colorScheme.error.withOpacity(0.8))),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

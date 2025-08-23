@@ -3,6 +3,7 @@ import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
+import 'package:smart_iraq/src/ui/widgets/product_card_shimmer.dart';
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
@@ -217,7 +218,17 @@ class _HomeScreenState extends State<HomeScreen> {
         future: _productsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return GridView.builder(
+              padding: const EdgeInsets.all(12.0),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12.0,
+                mainAxisSpacing: 12.0,
+                childAspectRatio: 0.7,
+              ),
+              itemCount: 6, // Show 6 shimmer cards while loading
+              itemBuilder: (context, index) => const ProductCardShimmer(),
+            );
           }
           if (snapshot.hasError) {
             return Center(child: Text('حدث خطأ: ${snapshot.error}'));
@@ -227,7 +238,14 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           final products = snapshot.data!;
-          return ListView.builder(
+          return GridView.builder(
+            padding: const EdgeInsets.all(12.0),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // 2 cards per row
+              crossAxisSpacing: 12.0,
+              mainAxisSpacing: 12.0,
+              childAspectRatio: 0.7, // Adjust this ratio to fit your card's new design
+            ),
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
