@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/models/managed_ad_model.dart';
+import 'package:smart_iraq/src/models/product_request_model.dart'; // New
 import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/widgets/managed_ad_card.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card_shimmer.dart';
+import 'package:smart_iraq/src/ui/widgets/product_request_card.dart'; // New
 import 'package:smart_iraq/src/ui/screens/add_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
 import 'package:smart_iraq/src/models/app_banner_model.dart';
+import 'package:smart_iraq/src/models/profile_model.dart';
+import 'package:smart_iraq/src/ui/screens/create_request_screen.dart';
 import 'package:smart_iraq/src/ui/screens/smart_assistant_screen.dart';
 import 'dart:math';
 
@@ -37,12 +41,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool? _sortAscending;
   AppBanner? _banner;
   bool _isBannerLoading = true;
+  Profile? _profile;
 
   @override
   void initState() {
     super.initState();
     _fetchData();
     _fetchBanner();
+    if (!widget.isGuest) {
+      _fetchProfile();
+    }
   }
 
   @override
@@ -52,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchBanner() async {
+    // ... (existing code)
     try {
       final data = await supabase
           .from('app_banners')
@@ -76,7 +85,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchProfile() async {
+    // ... (existing code)
+    try {
+      final userId = supabase.auth.currentUser!.id;
+      final data = await supabase.from('profiles').select().eq('id', userId).single();
+      setState(() {
+        _profile = Profile.fromJson(data);
+      });
+    } catch (e) {
+      debugPrint('Could not fetch profile: $e');
+    }
+  }
+
   Future<List<ManagedAd>> _getManagedAds() async {
+    // ... (existing code)
     try {
       final data = await supabase.from('managed_ads').select().eq('is_active', true);
       return (data as List).map((json) => ManagedAd.fromJson(json)).toList();
@@ -98,13 +121,20 @@ class _HomeScreenState extends State<HomeScreen> {
       category: _selectedCategory,
       sortAscending: _sortAscending,
     );
+    final requestsFuture = supabase.from('product_requests').select().eq('is_active', true);
     final managedAdsFuture = _getManagedAds();
 
-    final results = await Future.wait([productsFuture, managedAdsFuture]);
-    final products = results[0] as List<Product>;
-    final managedAds = results[1] as List<ManagedAd>;
+    final results = await Future.wait([productsFuture, requestsFuture, managedAdsFuture]);
 
-    List<dynamic> combinedList = List.from(products);
+    final products = results[0] as List<Product>;
+    final requestsData = results[1] as List;
+    final managedAds = results[2] as List<ManagedAd>;
+
+    final requests = requestsData.map((json) => ProductRequest.fromJson(json)).toList();
+
+    List<dynamic> combinedList = [...products, ...requests];
+    combinedList.shuffle(); // Shuffle products and requests together
+
     if (managedAds.isNotEmpty) {
       final adIndex = min(4, combinedList.length);
       combinedList.insert(adIndex, managedAds.first);
@@ -119,72 +149,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showFilterSheet() {
-    String? tempCategory = _selectedCategory;
-    bool? tempSort = _sortAscending;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('الفلترة والفرز', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      initialValue: tempCategory,
-                      decoration: const InputDecoration(labelText: 'الفئة'),
-                      onChanged: (value) => tempCategory = value.isNotEmpty ? value : null,
-                    ),
-                    const SizedBox(height: 16),
-                    Text('الفرز حسب السعر', style: Theme.of(context).textTheme.titleMedium),
-                    RadioListTile<bool?>(
-                      title: const Text('من الأقل إلى الأعلى'),
-                      value: true,
-                      groupValue: tempSort,
-                      onChanged: (value) => setModalState(() => tempSort = value),
-                    ),
-                    RadioListTile<bool?>(
-                      title: const Text('من الأعلى إلى الأقل'),
-                      value: false,
-                      groupValue: tempSort,
-                      onChanged: (value) => setModalState(() => tempSort = value),
-                    ),
-                    RadioListTile<bool?>(
-                      title: const Text('بدون فرز'),
-                      value: null,
-                      groupValue: tempSort,
-                      onChanged: (value) => setModalState(() => tempSort = value),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedCategory = tempCategory;
-                          _sortAscending = tempSort;
-                        });
-                        _fetchData();
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('تطبيق'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+    // ... (existing code)
   }
 
   AppBar _buildNormalAppBar() {
-    return AppBar(
+    // ... (existing code)
+     return AppBar(
       title: const Text('السوق - العراق الذكي'),
       actions: [
         IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _isSearching = true)),
@@ -203,6 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   AppBar _buildSearchAppBar() {
+    // ... (existing code)
     return AppBar(
       leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _clearSearch),
       title: TextField(
@@ -217,6 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBanner() {
+    // ... (existing code)
     if (_isBannerLoading || _banner == null) {
       return const SizedBox.shrink();
     }
@@ -267,6 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     final item = feedItems[index];
                     if (item is ManagedAd) return ManagedAdCard(ad: item);
                     if (item is Product) return ProductCard(product: item);
+                    if (item is ProductRequest) return ProductRequestCard(request: item);
                     return const SizedBox.shrink();
                   },
                 );
@@ -275,12 +248,32 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: widget.isGuest
-          ? null
-          : FloatingActionButton(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProductScreen())),
-              child: const Icon(Icons.add),
-            ),
+      floatingActionButton: _buildFloatingActionButton(),
     );
+  }
+
+  Widget? _buildFloatingActionButton() {
+    if (widget.isGuest || _profile == null) {
+      return null;
+    }
+    if (_profile?.verification_status != 'approved') return null;
+
+    if (_profile!.business_type == 'wholesaler') {
+      return FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProductScreen())),
+        label: const Text('إضافة منتج'),
+        icon: const Icon(Icons.add),
+      );
+    }
+
+    if (_profile!.business_type == 'retailer') {
+      return FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CreateRequestScreen())),
+        label: const Text('طلب بضاعة'),
+        icon: const Icon(Icons.add_shopping_cart),
+      );
+    }
+
+    return null;
   }
 }

@@ -28,6 +28,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     'إلكترونيات', 'ملابس', 'أثاث', 'مركبات', 'عقارات', 'مواد غذائية', 'غير ذلك',
   ];
   final List<String> _unitTypes = const ['قطعة', 'كرتونة', 'درزن', 'كيلوغرام'];
+  final _donationDescriptionController = TextEditingController();
+  bool _isDonation = false;
 
   @override
   void dispose() {
@@ -86,6 +88,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         'stock_quantity': int.parse(_stockQuantityController.text.trim()),
         'minimum_order_quantity': int.parse(_minOrderQuantityController.text.trim()),
         'unit_type': _selectedUnitType,
+        'is_available_for_donation': _isDonation,
+        'donation_description': _isDonation ? _donationDescriptionController.text.trim() : null,
       });
 
       if (mounted) {
@@ -194,6 +198,43 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   items: _categories.map((e) => DropdownMenuItem<String>(value: e, child: Text(e))).toList(),
                   onChanged: (v) => setState(() => _selectedCategory = v),
                   validator: (v) => v == null ? 'الرجاء اختيار فئة' : null,
+                ),
+                const SizedBox(height: 24.0),
+                // --- Donation Section ---
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        title: const Text('التبرع بجزء من المنتج للفقراء'),
+                        subtitle: const Text('سيتم عرض هذا التبرع في صفحة دعم الفقراء'),
+                        value: _isDonation,
+                        onChanged: (bool value) {
+                          setState(() {
+                            _isDonation = value;
+                          });
+                        },
+                        activeColor: Colors.green,
+                      ),
+                      if (_isDonation) ...[
+                        const SizedBox(height: 8.0),
+                        TextFormField(
+                          controller: _donationDescriptionController,
+                          decoration: const InputDecoration(
+                            labelText: 'وصف الجزء المتبرع به',
+                            hintText: 'مثال: كرتونة واحدة من كل 10 كراتين',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (v) => _isDonation && (v == null || v.isEmpty) ? 'الرجاء إدخال وصف للتبرع' : null,
+                        ),
+                      ]
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24.0),
                 _isLoading

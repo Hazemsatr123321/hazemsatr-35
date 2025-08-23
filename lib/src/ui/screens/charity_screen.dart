@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/charity_campaign_model.dart';
 import 'package:smart_iraq/src/models/donation_method_model.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:smart_iraq/src/models/product_model.dart'; // Import Product model
 
 class CharityScreen extends StatefulWidget {
   const CharityScreen({super.key});
@@ -25,16 +25,15 @@ class _CharityScreenState extends State<CharityScreen> {
     try {
       final campaignsFuture = supabase.from('charity_campaigns').select().eq('is_active', true);
       final methodsFuture = supabase.from('donation_methods').select().eq('is_active', true);
+      final donationsFuture = supabase.from('products').select().eq('is_available_for_donation', true);
 
-      final results = await Future.wait([campaignsFuture, methodsFuture]);
+      final results = await Future.wait([campaignsFuture, methodsFuture, donationsFuture]);
 
-      final campaignsData = results[0] as List;
-      final methodsData = results[1] as List;
+      final campaigns = (results[0] as List).map((json) => CharityCampaign.fromJson(json)).toList();
+      final methods = (results[1] as List).map((json) => DonationMethod.fromJson(json)).toList();
+      final donations = (results[2] as List).map((json) => Product.fromJson(json)).toList();
 
-      final campaigns = campaignsData.map((json) => CharityCampaign.fromJson(json)).toList();
-      final methods = methodsData.map((json) => DonationMethod.fromJson(json)).toList();
-
-      return {'campaigns': campaigns, 'methods': methods};
+      return {'campaigns': campaigns, 'methods': methods, 'donations': donations};
     } catch (e) {
       debugPrint('Error fetching charity data: $e');
       rethrow;
@@ -47,39 +46,54 @@ class _CharityScreenState extends State<CharityScreen> {
       appBar: AppBar(
         title: const Text('دعم القضايا الخيرية'),
       ),
-      body: FutureBuilder<Map<String, List<dynamic>>>(
-        future: _charityDataFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('حدث خطأ في تحميل البيانات: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || (snapshot.data!['campaigns']!.isEmpty && snapshot.data!['methods']!.isEmpty)) {
-            return const Center(child: Text('لا توجد حملات أو طرق تبرع متاحة حالياً.'));
-          }
-
-          final campaigns = snapshot.data!['campaigns'] as List<CharityCampaign>;
-          final methods = snapshot.data!['methods'] as List<DonationMethod>;
-
-          return ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              if (methods.isNotEmpty) ...[
-                _buildSectionTitle(context, 'طرق التبرع المتاحة'),
-                ...methods.map((method) => _buildDonationMethodCard(context, method)),
-                const SizedBox(height: 24),
-                const Divider(),
-              ],
-              if (campaigns.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildSectionTitle(context, 'الحملات الحالية'),
-                ...campaigns.map((campaign) => _buildCampaignCard(context, campaign)),
-              ],
-            ],
-          );
+      body: RefreshIndicator(
+        onRefresh: () async {
+          setState(() {
+             _charityDataFuture = _fetchCharityData();
+          });
         },
+        child: FutureBuilder<Map<String, List<dynamic>>>(
+          future: _charityDataFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('حدث خطأ في تحميل البيانات: ${snapshot.error}'));
+            }
+            if (!snapshot.hasData || (snapshot.data!['campaigns']!.isEmpty && snapshot.data!['methods']!.isEmpty && snapshot.data!['donations']!.isEmpty)) {
+              return const Center(child: Text('لا توجد حملات أو تبرعات متاحة حالياً.'));
+            }
+
+            final campaigns = snapshot.data!['campaigns'] as List<CharityCampaign>;
+            final methods = snapshot.data!['methods'] as List<DonationMethod>;
+            final donations = snapshot.data!['donations'] as List<Product>;
+
+            return ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                if (methods.isNotEmpty) ...[
+                  _buildSectionTitle(context, 'طرق التبرع المالي'),
+                  ...methods.map((method) => _buildDonationMethodCard(context, method)),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                ],
+                 if (donations.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _buildSectionTitle(context, 'تبرعات عينية من التجار'),
+                  ...donations.map((product) => _buildDonatedProductCard(context, product)),
+                   const SizedBox(height: 24),
+                  const Divider(),
+                ],
+                if (campaigns.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _buildSectionTitle(context, 'حملات التبرع المالي'),
+                  ...campaigns.map((campaign) => _buildCampaignCard(context, campaign)),
+                ],
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -127,6 +141,41 @@ class _CharityScreenState extends State<CharityScreen> {
               const SizedBox(height: 8),
               Text(method.instructions!, style: Theme.of(context).textTheme.bodyMedium),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDonatedProductCard(BuildContext context, Product product) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            if (product.imageUrl != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.network(product.imageUrl!, width: 80, height: 80, fit: BoxFit.cover),
+              )
+            else
+              Container(width: 80, height: 80, color: Colors.grey.shade200, child: const Icon(Icons.inventory_2_outlined)),
+            const SizedBox(width: 12.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(product.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    'التبرع: ${product.donation_description ?? 'كمية للمحتاجين'}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.green.shade700),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

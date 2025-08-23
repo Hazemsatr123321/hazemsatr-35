@@ -12,6 +12,10 @@ class Product {
   final int? stock_quantity;
   final String? unit_type;
 
+  // Donation Fields
+  final bool is_available_for_donation;
+  final String? donation_description;
+
   Product({
     required this.id,
     required this.name,
@@ -23,6 +27,8 @@ class Product {
     this.minimum_order_quantity,
     this.stock_quantity,
     this.unit_type,
+    this.is_available_for_donation = false,
+    this.donation_description,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -37,6 +43,8 @@ class Product {
       minimum_order_quantity: json['minimum_order_quantity'] as int?,
       stock_quantity: json['stock_quantity'] as int?,
       unit_type: json['unit_type'] as String?,
+      is_available_for_donation: json['is_available_for_donation'] as bool? ?? false,
+      donation_description: json['donation_description'] as String?,
     );
   }
 }
