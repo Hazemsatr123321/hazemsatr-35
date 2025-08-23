@@ -25,6 +25,7 @@ import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/models/chat_room_model.dart';
 import 'package:smart_iraq/src/models/message_model.dart';
 import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
+import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -386,4 +387,21 @@ void main() {
   //   // This would be the ideal assertion
   //   expect(find.text('إدارة الإعلانات الخارجية'), findsOneWidget);
   // });
+
+  testWidgets('DashboardScreen shows error when not logged in', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: DashboardScreen()));
+    await tester.pumpAndSettle(); // Let the future fail
+    expect(find.textContaining('User not logged in'), findsOneWidget);
+  });
+
+  testWidgets('AddProductScreen has suggest price button', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(home: AddProductScreen()));
+    expect(find.byIcon(Icons.auto_fix_high), findsOneWidget);
+  });
+
+  testWidgets('EditProductScreen has suggest price button', (WidgetTester tester) async {
+    final product = Product(id: '1', title: 'test', price: 100, imageUrl: '', userId: '123');
+    await tester.pumpWidget(MaterialApp(home: EditProductScreen(product: product)));
+    expect(find.byIcon(Icons.auto_fix_high), findsOneWidget);
+  });
 }

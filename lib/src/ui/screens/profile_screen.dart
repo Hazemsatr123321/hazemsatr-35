@@ -6,6 +6,7 @@ import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/models/managed_ad_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
+import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math';
 
@@ -180,6 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             body: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _buildReferralSection(profile)),
+                if (!isAdmin) _buildDashboardButton(),
                 if (isAdmin) _buildManagedAdsSection(),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -291,6 +293,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardButton() {
+    return SliverToBoxAdapter(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(15.0),
+            border: Border.all(color: Theme.of(context).colorScheme.primary),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.dashboard, color: Theme.of(context).colorScheme.primary, size: 30),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'عرض لوحة معلومات التاجر',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, color: Theme.of(context).colorScheme.primary),
+            ],
+          ),
         ),
       ),
     );

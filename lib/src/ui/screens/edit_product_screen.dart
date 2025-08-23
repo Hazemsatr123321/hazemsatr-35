@@ -20,6 +20,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
   String? _selectedCategory;
   bool _isLoading = false;
   bool _isGenerating = false;
+  bool _isSuggestingPrice = false;
 
   final List<String> _categories = const [
     'إلكترونيات',
@@ -91,6 +92,53 @@ class _EditProductScreenState extends State<EditProductScreen> {
           _isGenerating = false;
         });
       }
+    }
+  }
+
+  Future<void> _suggestPrice() async {
+    if (_titleController.text.isEmpty || _descriptionController.text.isEmpty || _selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('الرجاء إدخال العنوان، الوصف، والفئة أولاً لاقتراح سعر.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSuggestingPrice = true);
+
+    try {
+      final response = await supabase.functions.invoke(
+        'suggest-price',
+        body: {
+          'title': _titleController.text,
+          'description': _descriptionController.text,
+          'category': _selectedCategory,
+        },
+      );
+
+      final suggestedPrice = response.data['suggested_price']?.toString();
+      if (suggestedPrice != null) {
+        _priceController.text = suggestedPrice;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم اقتراح السعر: $suggestedPrice د.ع'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw 'No price suggested';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('حدث خطأ أثناء اقتراح السعر: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      setState(() => _isSuggestingPrice = false);
     }
   }
 
@@ -273,9 +321,16 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 const SizedBox(height: 16.0),
                 TextFormField(
                   controller: _priceController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'السعر (د.ع)',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: _isSuggestingPrice
+                      ? const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())
+                      : IconButton(
+                          icon: Icon(Icons.auto_fix_high, color: Theme.of(context).colorScheme.secondary),
+                          onPressed: _suggestPrice,
+                          tooltip: 'اقتراح سعر ذكي',
+                        ),
                   ),
                   keyboardType: TextInputType.number,
                   validator: (value) {
