@@ -1,72 +1,191 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:smart_iraq/main.dart';
+import 'package:smart_iraq/src/models/charity_campaign_model.dart';
+import 'package:smart_iraq/src/models/donation_method_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class CharityScreen extends StatelessWidget {
+class CharityScreen extends StatefulWidget {
   const CharityScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
+  State<CharityScreen> createState() => _CharityScreenState();
+}
 
+class _CharityScreenState extends State<CharityScreen> {
+  Future<Map<String, List<dynamic>>>? _charityDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _charityDataFuture = _fetchCharityData();
+  }
+
+  Future<Map<String, List<dynamic>>> _fetchCharityData() async {
+    try {
+      final campaignsFuture = supabase.from('charity_campaigns').select().eq('is_active', true);
+      final methodsFuture = supabase.from('donation_methods').select().eq('is_active', true);
+
+      final results = await Future.wait([campaignsFuture, methodsFuture]);
+
+      final campaignsData = results[0] as List;
+      final methodsData = results[1] as List;
+
+      final campaigns = campaignsData.map((json) => CharityCampaign.fromJson(json)).toList();
+      final methods = methodsData.map((json) => DonationMethod.fromJson(json)).toList();
+
+      return {'campaigns': campaigns, 'methods': methods};
+    } catch (e) {
+      debugPrint('Error fetching charity data: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('دعم القضايا الخيرية'),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+      body: FutureBuilder<Map<String, List<dynamic>>>(
+        future: _charityDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('حدث خطأ في تحميل البيانات: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || (snapshot.data!['campaigns']!.isEmpty && snapshot.data!['methods']!.isEmpty)) {
+            return const Center(child: Text('لا توجد حملات أو طرق تبرع متاحة حالياً.'));
+          }
+
+          final campaigns = snapshot.data!['campaigns'] as List<CharityCampaign>;
+          final methods = snapshot.data!['methods'] as List<DonationMethod>;
+
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
             children: [
-              Icon(
-                Icons.volunteer_activism,
-                size: 80,
-                color: colorScheme.primary,
-              ),
-              const SizedBox(height: 24.0),
-              Text(
-                'التزامنا بالمجتمع',
-                style: textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                'في "العراق الذكي"، نؤمن بأهمية رد الجميل لمجتمعنا. نحن ملتزمون بتخصيص جزء من مواردنا لدعم القضايا الإنسانية والخيرية في العراق.',
-                style: textTheme.bodyLarge?.copyWith(height: 1.5),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24.0),
-              const Divider(),
-              const SizedBox(height: 24.0),
-              Text(
-                'دعم المشاريع الصغيرة',
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'نقدم ميزة تمييز الإعلانات بشكل مجاني لمدة أسبوع لدعم المشاريع الصغيرة والأسر المنتجة، لمساعدتهم على النمو والوصول إلى المزيد من الزبائن.',
-                style: textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24.0),
-              Text(
-                'دعم مرضى السرطان والفقراء',
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                'نعمل على بناء شراكات مع مؤسسات خيرية موثوقة لتوجيه الدعم المادي والمعنوي للمحتاجين من الفقراء ومرضى السرطان. سيتم الإعلان عن تفاصيل هذه المبادرات قريبًا.',
-                style: textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
+              if (methods.isNotEmpty) ...[
+                _buildSectionTitle(context, 'طرق التبرع المتاحة'),
+                ...methods.map((method) => _buildDonationMethodCard(context, method)),
+                const SizedBox(height: 24),
+                const Divider(),
+              ],
+              if (campaigns.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildSectionTitle(context, 'الحملات الحالية'),
+                ...campaigns.map((campaign) => _buildCampaignCard(context, campaign)),
+              ],
             ],
-          ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildDonationMethodCard(BuildContext context, DonationMethod method) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(method.methodName, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(method.accountDetails, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold))),
+                IconButton(
+                  icon: const Icon(Icons.copy),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: method.accountDetails));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم نسخ الرقم إلى الحافظة')),
+                    );
+                  },
+                ),
+              ],
+            ),
+            if (method.instructions != null && method.instructions!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(method.instructions!, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCampaignCard(BuildContext context, CharityCampaign campaign) {
+    final goal = campaign.goalAmount ?? 0;
+    final progress = goal > 0 ? (campaign.currentAmount / goal) : 0.0;
+
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(vertical: 12.0),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (campaign.imageUrl != null)
+            Image.network(
+              campaign.imageUrl!,
+              width: double.infinity,
+              height: 180,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 180),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(campaign.title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                if (campaign.description != null) ...[
+                  const SizedBox(height: 8),
+                  Text(campaign.description!, style: Theme.of(context).textTheme.bodyMedium),
+                ],
+                if (goal > 0) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${campaign.currentAmount.toStringAsFixed(0)} / ${goal.toStringAsFixed(0)} دينار', style: Theme.of(context).textTheme.bodySmall),
+                      Text('${(progress * 100).toStringAsFixed(1)}%', style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 12,
+                      backgroundColor: Colors.grey.shade300,
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

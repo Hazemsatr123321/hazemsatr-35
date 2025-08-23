@@ -11,6 +11,7 @@ import 'package:smart_iraq/src/ui/screens/profile_screen.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
+import 'package:smart_iraq/src/models/app_banner_model.dart';
 import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
@@ -33,17 +34,45 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   String? _selectedCategory;
   bool? _sortAscending;
+  AppBanner? _banner;
+  bool _isBannerLoading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchData();
+    _fetchBanner();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchBanner() async {
+    try {
+      final data = await supabase
+          .from('app_banners')
+          .select()
+          .eq('is_active', true)
+          .limit(1);
+      if (data.isNotEmpty) {
+        setState(() {
+          _banner = AppBanner.fromJson(data.first);
+          _isBannerLoading = false;
+        });
+      } else {
+        setState(() {
+          _isBannerLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Could not fetch banner: $e');
+      setState(() {
+        _isBannerLoading = false;
+      });
+    }
   }
 
   Future<List<ManagedAd>> _getManagedAds() async {
@@ -184,41 +213,64 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildBanner() {
+    if (_isBannerLoading || _banner == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12.0),
+      color: _banner!.backgroundColor,
+      child: Text(
+        _banner!.message,
+        style: TextStyle(color: _banner!.textColor, fontWeight: FontWeight.bold),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _isSearching ? _buildSearchAppBar() : _buildNormalAppBar(),
-      body: FutureBuilder<List<dynamic>>(
-        future: _feedFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return GridView.builder(
-              padding: const EdgeInsets.all(12.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
-              ),
-              itemCount: 8,
-              itemBuilder: (context, index) => const ProductCardShimmer(),
-            );
-          }
-          if (snapshot.hasError) return Center(child: Text('حدث خطأ: ${snapshot.error}'));
-          if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('لا توجد إعلانات لعرضها حالياً.'));
+      body: Column(
+        children: [
+          _buildBanner(),
+          Expanded(
+            child: FutureBuilder<List<dynamic>>(
+              future: _feedFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(12.0),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
+                    ),
+                    itemCount: 8,
+                    itemBuilder: (context, index) => const ProductCardShimmer(),
+                  );
+                }
+                if (snapshot.hasError) return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+                if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('لا توجد إعلانات لعرضها حالياً.'));
 
-          final feedItems = snapshot.data!;
-          return GridView.builder(
-            padding: const EdgeInsets.all(12.0),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
+                final feedItems = snapshot.data!;
+                return GridView.builder(
+                  padding: const EdgeInsets.all(12.0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
+                  ),
+                  itemCount: feedItems.length,
+                  itemBuilder: (context, index) {
+                    final item = feedItems[index];
+                    if (item is ManagedAd) return ManagedAdCard(ad: item);
+                    if (item is Product) return ProductCard(product: item);
+                    return const SizedBox.shrink();
+                  },
+                );
+              },
             ),
-            itemCount: feedItems.length,
-            itemBuilder: (context, index) {
-              final item = feedItems[index];
-              if (item is ManagedAd) return ManagedAdCard(ad: item);
-              if (item is Product) return ProductCard(product: item);
-              return const SizedBox.shrink();
-            },
-          );
-        },
+          ),
+        ],
       ),
       floatingActionButton: widget.isGuest
           ? null
