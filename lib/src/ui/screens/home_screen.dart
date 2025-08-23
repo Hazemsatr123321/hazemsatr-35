@@ -15,10 +15,12 @@ import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
   final ProductRepository productRepository;
+  final bool isGuest;
 
   const HomeScreen({
     super.key,
     required this.productRepository,
+    this.isGuest = false,
   });
 
   @override
@@ -157,10 +159,13 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _isSearching = true)),
         IconButton(icon: const Icon(Icons.filter_list), onPressed: _showFilterSheet),
-        IconButton(icon: const Icon(Icons.chat), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => ChatRoomsScreen(chatRepository: SupabaseChatRepository())))),
+        if (!widget.isGuest)
+          IconButton(icon: const Icon(Icons.chat), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => ChatRoomsScreen(chatRepository: SupabaseChatRepository())))),
         IconButton(icon: const Icon(Icons.volunteer_activism), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CharityScreen()))),
-        IconButton(icon: const Icon(Icons.person), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ProfileScreen()))),
-        IconButton(icon: const Icon(Icons.logout), onPressed: () => supabase.auth.signOut()),
+        if (!widget.isGuest)
+          IconButton(icon: const Icon(Icons.person), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ProfileScreen()))),
+        if (!widget.isGuest)
+          IconButton(icon: const Icon(Icons.logout), onPressed: () => supabase.auth.signOut()),
       ],
     );
   }
@@ -215,10 +220,12 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProductScreen())),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: widget.isGuest
+          ? null
+          : FloatingActionButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProductScreen())),
+              child: const Icon(Icons.add),
+            ),
     );
   }
 }

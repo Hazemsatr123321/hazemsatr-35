@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/ui/screens/home_screen.dart';
-import 'package:smart_iraq/src/ui/screens/auth/login_screen.dart';
+import 'package:smart_iraq/src/ui/screens/auth/auth_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
 
@@ -28,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
         final session = data.session;
         if (session == null) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            MaterialPageRoute(builder: (context) => const AuthScreen()),
             (route) => false,
           );
         } else {
