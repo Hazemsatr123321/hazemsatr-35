@@ -61,8 +61,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Calculate stats
           final totalAds = products.length;
           final totalValue = products.fold<double>(0.0, (sum, item) => sum + item.price);
-          final totalViews = products.fold<int>(0, (sum, item) => sum + (item.viewCount ?? 0));
-          final totalMessages = products.fold<int>(0, (sum, item) => sum + (item.messageCount ?? 0));
 
           final currencyFormat = NumberFormat.currency(locale: 'ar_IQ', symbol: 'د.ع');
 
@@ -83,18 +81,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 label: 'القيمة الإجمالية للإعلانات',
                 value: currencyFormat.format(totalValue),
                 color: Colors.green,
-              ),
-              _buildStatCard(
-                icon: Icons.visibility,
-                label: 'مجموع المشاهدات',
-                value: totalViews.toString(),
-                color: Colors.orange,
-              ),
-              _buildStatCard(
-                icon: Icons.message,
-                label: 'مجموع الرسائل',
-                value: totalMessages.toString(),
-                color: Colors.purple,
               ),
             ],
           );

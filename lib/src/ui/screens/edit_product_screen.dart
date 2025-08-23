@@ -13,216 +13,88 @@ class EditProductScreen extends StatefulWidget {
 
 class _EditProductScreenState extends State<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleController;
+  late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _priceController;
-  final _aiKeywordsController = TextEditingController();
+  late final TextEditingController _stockQuantityController;
+  late final TextEditingController _minOrderQuantityController;
+
   String? _selectedCategory;
+  String? _selectedUnitType;
   bool _isLoading = false;
-  bool _isGenerating = false;
-  bool _isSuggestingPrice = false;
 
   final List<String> _categories = const [
-    'إلكترونيات',
-    'ملابس',
-    'أثاث',
-    'مركبات',
-    'عقارات',
-    'مواد غذائية',
-    'غير ذلك',
+    'إلكترونيات', 'ملابس', 'أثاث', 'مركبات', 'عقارات', 'مواد غذائية', 'غير ذلك',
   ];
-
-  Future<void> _generateAdCopy() async {
-    if (_aiKeywordsController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('الرجاء إدخال كلمات مفتاحية لوصف المنتج.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isGenerating = true;
-    });
-
-    try {
-      // Call the Supabase Edge Function
-      final response = await supabase.functions.invoke(
-        'generate-ad-copy',
-        body: {'keywords': _aiKeywordsController.text.trim()},
-      );
-
-      if (response.status != 200) {
-        throw FunctionException(
-          status: response.status,
-          details: response.data,
-        );
-      }
-
-      final data = response.data;
-      final String aiTitle = data['title'] ?? 'خطأ في إنشاء العنوان';
-      final String aiDescription = data['description'] ?? 'خطأ في إنشاء الوصف';
-
-      _titleController.text = aiTitle;
-      _descriptionController.text = aiDescription;
-
-    } on FunctionException catch (error) {
-       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ من السيرفر: ${error.details ?? 'فشل تحديث المحتوى'}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('حدث خطأ غير متوقع: $error'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGenerating = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _suggestPrice() async {
-    if (_titleController.text.isEmpty || _descriptionController.text.isEmpty || _selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('الرجاء إدخال العنوان، الوصف، والفئة أولاً لاقتراح سعر.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isSuggestingPrice = true);
-
-    try {
-      final response = await supabase.functions.invoke(
-        'suggest-price',
-        body: {
-          'title': _titleController.text,
-          'description': _descriptionController.text,
-          'category': _selectedCategory,
-        },
-      );
-
-      final suggestedPrice = response.data['suggested_price']?.toString();
-      if (suggestedPrice != null) {
-        _priceController.text = suggestedPrice;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('تم اقتراح السعر: $suggestedPrice د.ع'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        throw 'No price suggested';
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('حدث خطأ أثناء اقتراح السعر: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    } finally {
-      setState(() => _isSuggestingPrice = false);
-    }
-  }
+  final List<String> _unitTypes = const ['قطعة', 'كرتونة', 'درزن', 'كيلوغرام'];
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.product.title);
+    _nameController = TextEditingController(text: widget.product.name);
     _descriptionController = TextEditingController(text: widget.product.description);
     _priceController = TextEditingController(text: widget.product.price.toString());
-    // Ensure the product's category is valid before setting it
+    _stockQuantityController = TextEditingController(text: widget.product.stock_quantity?.toString() ?? '0');
+    _minOrderQuantityController = TextEditingController(text: widget.product.minimum_order_quantity?.toString() ?? '1');
+
     if (widget.product.category != null && _categories.contains(widget.product.category)) {
       _selectedCategory = widget.product.category;
     }
+     if (widget.product.unit_type != null && _unitTypes.contains(widget.product.unit_type)) {
+      _selectedUnitType = widget.product.unit_type;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    _stockQuantityController.dispose();
+    _minOrderQuantityController.dispose();
+    super.dispose();
   }
 
   Future<void> _updateProduct() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       await supabase.from('products').update({
-        'title': _titleController.text.trim(),
+        'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text.trim()),
         'category': _selectedCategory,
+        'stock_quantity': int.parse(_stockQuantityController.text.trim()),
+        'minimum_order_quantity': int.parse(_minOrderQuantityController.text.trim()),
+        'unit_type': _selectedUnitType,
       }).eq('id', widget.product.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم تحديث الإعلان بنجاح!'),
-            backgroundColor: Colors.green,
-          ),
+          const SnackBar(content: Text('تم تحديث المنتج بنجاح!'), backgroundColor: Colors.green),
         );
-        // Pop back to the profile screen
         Navigator.of(context).pop();
       }
-    } on PostgrestException catch (error) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.message),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    } catch (error) {
-       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
+          SnackBar(content: Text('حدث خطأ: ${error.toString()}'), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
 
   @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _priceController.dispose();
-    _aiKeywordsController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('تعديل الإعلان'),
-      ),
+      appBar: AppBar(title: const Text('تعديل المنتج')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -231,150 +103,83 @@ class _EditProductScreenState extends State<EditProductScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // --- AI Generation Section ---
-                Container(
-                  margin: const EdgeInsets.only(bottom: 24.0),
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                // Note: Image editing is not implemented in this version for simplicity.
+                // A real app might have a button to re-upload the image.
+                if (widget.product.imageUrl != null)
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Theme.of(context).colorScheme.secondary),
+                    child: Image.network(widget.product.imageUrl!, height: 200, fit: BoxFit.cover),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.auto_awesome, color: Theme.of(context).colorScheme.secondary),
-                          const SizedBox(width: 8),
-                          Text(
-                            'تحسين المحتوى بالذكاء الاصطناعي',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'أدخل كلمات مفتاحية جديدة، وسيقوم الذكاء الاصطناعي بتحديث عنوان ووصف إعلانك.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _aiKeywordsController,
-                        decoration: const InputDecoration(
-                          labelText: 'الكلمات المفتاحية',
-                          hintText: 'مثال: لابتوب ديل بسعر مخفض',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: _isGenerating
-                            ? const Center(child: CircularProgressIndicator())
-                            : ElevatedButton.icon(
-                                key: const Key('generateWithAIButtonEdit'),
-                                onPressed: _generateAdCopy,
-                                icon: const Icon(Icons.auto_awesome),
-                                label: const Text('تحديث المحتوى'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                                ),
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-                // --- End AI Generation Section ---
+                const SizedBox(height: 24.0),
                 TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'عنوان الإعلان',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'الرجاء إدخال عنوان للإعلان';
-                    }
-                    return null;
-                  },
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'اسم المنتج', border: OutlineInputBorder()),
+                  validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال اسم المنتج' : null,
                 ),
                 const SizedBox(height: 16.0),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'وصف الإعلان',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 5,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'الرجاء إدخال وصف للإعلان';
-                    }
-                    return null;
-                  },
+                  decoration: const InputDecoration(labelText: 'وصف المنتج', border: OutlineInputBorder()),
+                  maxLines: 4,
+                  validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال وصف للمنتج' : null,
                 ),
                 const SizedBox(height: 16.0),
-                TextFormField(
-                  controller: _priceController,
-                  decoration: InputDecoration(
-                    labelText: 'السعر (د.ع)',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: _isSuggestingPrice
-                      ? const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())
-                      : IconButton(
-                          icon: Icon(Icons.auto_fix_high, color: Theme.of(context).colorScheme.secondary),
-                          onPressed: _suggestPrice,
-                          tooltip: 'اقتراح سعر ذكي',
-                        ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || double.tryParse(value) == null) {
-                      return 'الرجاء إدخال سعر صحيح';
-                    }
-                    return null;
-                  },
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _priceController,
+                        decoration: const InputDecoration(labelText: 'السعر (للوحدة)', border: OutlineInputBorder()),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v == null || v.isEmpty || double.tryParse(v) == null ? 'أدخل سعر صحيح' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedUnitType,
+                        decoration: const InputDecoration(labelText: 'وحدة القياس', border: OutlineInputBorder()),
+                        items: _unitTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                        onChanged: (v) => setState(() => _selectedUnitType = v),
+                        validator: (v) => v == null ? 'اختر وحدة' : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0),
+                 Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _stockQuantityController,
+                        decoration: const InputDecoration(labelText: 'الكمية المتوفرة', border: OutlineInputBorder()),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'أدخل كمية صحيحة' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _minOrderQuantityController,
+                        decoration: const InputDecoration(labelText: 'أقل كمية للطلب', border: OutlineInputBorder()),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'أدخل كمية صحيحة' : null,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16.0),
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'الفئة',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: _categories.map((String category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedCategory = newValue;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'الرجاء اختيار فئة للإعلان';
-                    }
-                    return null;
-                  },
+                  decoration: const InputDecoration(labelText: 'الفئة', border: OutlineInputBorder()),
+                  items: _categories.map((e) => DropdownMenuItem<String>(value: e, child: Text(e))).toList(),
+                  onChanged: (v) => setState(() => _selectedCategory = v),
+                  validator: (v) => v == null ? 'الرجاء اختيار فئة' : null,
                 ),
                 const SizedBox(height: 24.0),
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: _updateProduct,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        ),
-                        child: const Text('حفظ التعديلات'),
-                      ),
+                    : ElevatedButton(onPressed: _updateProduct, style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16.0)), child: const Text('حفظ التعديلات')),
               ],
             ),
           ),

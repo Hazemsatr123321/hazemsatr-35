@@ -44,17 +44,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (data != null) {
         return Profile.fromJson(data);
       } else {
-        final newProfileData = {'id': _user!.id, 'referral_code': _generateReferralCode()};
-        final insertedData = await supabase.from('profiles').insert(newProfileData).select().single();
-        return Profile.fromJson(insertedData);
+        // This case should ideally not happen with the new trigger, but as a fallback:
+        throw 'Profile not found and could not be created.';
       }
     } catch (e) { rethrow; }
-  }
-
-  String _generateReferralCode() {
-    final random = Random.secure();
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return String.fromCharCodes(Iterable.generate(8, (_) => chars.codeUnitAt(random.nextInt(chars.length))));
   }
 
   Future<List<Product>> _getProducts({required bool isAdmin}) async {
@@ -180,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
             body: CustomScrollView(
               slivers: [
-                SliverToBoxAdapter(child: _buildReferralSection(profile)),
+                SliverToBoxAdapter(child: _buildBusinessInfoSection(profile)),
                 if (!isAdmin) _buildDashboardButton(),
                 if (isAdmin) _buildManagedAdsSection(),
                 SliverToBoxAdapter(
@@ -220,8 +213,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildReferralSection(Profile profile) {
+  Widget _buildBusinessInfoSection(Profile profile) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    String verificationText;
+    Color verificationColor;
+    IconData verificationIcon;
+
+    switch (profile.verification_status) {
+      case 'approved':
+        verificationText = 'موثق';
+        verificationColor = Colors.green;
+        verificationIcon = Icons.verified;
+        break;
+      case 'rejected':
+        verificationText = 'مرفوض';
+        verificationColor = Colors.red;
+        verificationIcon = Icons.error;
+        break;
+      default:
+        verificationText = 'قيد المراجعة';
+        verificationColor = Colors.orange;
+        verificationIcon = Icons.hourglass_top;
+    }
+
     return Container(
       margin: const EdgeInsets.all(16.0),
       padding: const EdgeInsets.all(16.0),
@@ -229,24 +244,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('نظام الإحالة', style: Theme.of(context).textTheme.titleLarge),
+          Text('معلومات الحساب التجاري', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 16),
+          _buildInfoRow(Icons.business, 'اسم العمل', profile.business_name ?? 'غير محدد'),
           const SizedBox(height: 12),
-          Row(children: [
-            Text('الكود الخاص بك: ', style: Theme.of(context).textTheme.bodyLarge),
-            const Spacer(),
-            SelectableText(profile.referralCode ?? 'N/A', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: colorScheme.primary)),
-            const SizedBox(width: 8),
-            GestureDetector(onTap: () { if (profile.referralCode != null) { Clipboard.setData(ClipboardData(text: profile.referralCode!)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ كود الإحالة!')));}}, child: Icon(Icons.copy, size: 18, color: colorScheme.secondary))
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            Text('عدد الإحالات الناجحة: ', style: Theme.of(context).textTheme.bodyLarge),
-            const Spacer(),
-            Text('${profile.referralCount}', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
-          ]),
+          _buildInfoRow(Icons.person_outline, 'نوع الحساب', profile.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(verificationIcon, color: verificationColor, size: 20),
+              const SizedBox(width: 16),
+              Text('حالة الحساب:', style: Theme.of(context).textTheme.bodyLarge),
+              const Spacer(),
+              Text(verificationText, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: verificationColor)),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+     return Row(children: [
+      Icon(icon, color: Colors.grey.shade600, size: 20),
+      const SizedBox(width: 16),
+      Text('$label:', style: Theme.of(context).textTheme.bodyLarge),
+      const Spacer(),
+      Text(value, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
+    ]);
   }
 
   Widget _buildManagedAdsSection() {

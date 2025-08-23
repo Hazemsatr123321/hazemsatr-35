@@ -124,11 +124,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final requestsFuture = supabase.from('product_requests').select().eq('is_active', true);
     final managedAdsFuture = _getManagedAds();
 
-    final results = await Future.wait([productsFuture, requestsFuture, managedAdsFuture]);
+    final results = await Future.wait<List<dynamic>>([productsFuture, requestsFuture, managedAdsFuture]);
 
-    final products = results[0] as List<Product>;
-    final requestsData = results[1] as List;
-    final managedAds = results[2] as List<ManagedAd>;
+    final products = results[0].cast<Product>();
+    final requestsData = results[1];
+    final managedAds = results[2].cast<ManagedAd>();
 
     final requests = requestsData.map((json) => ProductRequest.fromJson(json)).toList();
 
