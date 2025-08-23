@@ -2,10 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:smart_iraq/main.dart';
-import 'package:smart_iraq/src/ui/screens/home_screen.dart';
 import 'package:smart_iraq/src/ui/screens/auth/auth_screen.dart';
+import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:smart_iraq/src/repositories/product_repository.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,14 +35,19 @@ class _SplashScreenState extends State<SplashScreen> {
         (route) => false,
       );
     } else {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(
-            productRepository: SupabaseProductRepository(),
-          ),
-        ),
-        (route) => false,
-      );
+      // Also check if user profile is approved
+      final profile = await supabase.from('profiles').select('verification_status').eq('id', session.user.id).single();
+      if (profile['verification_status'] != 'approved') {
+        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false);
+         // Optionally, sign them out and show a message
+        await supabase.auth.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('حسابك لم يتم توثيقه بعد أو تم رفضه. الرجاء مراجعة الإدارة.'), backgroundColor: Colors.orange,));
+      } else {
+         Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          (route) => false,
+        );
+      }
     }
   }
 

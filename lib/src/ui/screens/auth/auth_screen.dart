@@ -1,8 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart';
-import 'package:smart_iraq/src/ui/screens/home_screen.dart';
-import 'package:smart_iraq/src/repositories/product_repository.dart';
+import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/ui/screens/auth/pending_verification_screen.dart';
 
@@ -83,12 +82,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
       if (response.user != null) {
         final profile = await supabase.from('profiles').select().eq('id', response.user!.id).single();
-        if (profile['verification_status'] != 'approved') {
-            Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const PendingVerificationScreen()), (route) => false);
+        if (profile['verification_status'] == 'approved') {
+          Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const MainNavigationScreen()), (route) => false);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const PendingVerificationScreen()), (route) => false);
         }
-        // else, the main auth listener will navigate to home
       }
-
     } on AuthException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -140,18 +139,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _continueAsGuest() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => HomeScreen(
-          productRepository: SupabaseProductRepository(),
-          isGuest: true,
-        ),
-      ),
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,18 +169,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     );
                   },
                 ),
-                const SizedBox(height: 24),
-                if (!_isLoading && _isLoginView)
-                  TextButton(
-                    onPressed: _continueAsGuest,
-                    child: Text(
-                      'المتابعة كزائر',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
