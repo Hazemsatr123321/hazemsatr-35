@@ -12,6 +12,7 @@ import 'package:smart_iraq/src/ui/screens/chat/chat_rooms_screen.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
 import 'package:smart_iraq/src/models/app_banner_model.dart';
+import 'package:smart_iraq/src/ui/screens/smart_assistant_screen.dart';
 import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
@@ -188,6 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _isSearching = true)),
         IconButton(icon: const Icon(Icons.filter_list), onPressed: _showFilterSheet),
+        if (!widget.isGuest)
+          IconButton(icon: const Icon(Icons.smart_toy_outlined), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SmartAssistantScreen()))),
         if (!widget.isGuest)
           IconButton(icon: const Icon(Icons.chat), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => ChatRoomsScreen(chatRepository: SupabaseChatRepository())))),
         IconButton(icon: const Icon(Icons.volunteer_activism), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CharityScreen()))),
