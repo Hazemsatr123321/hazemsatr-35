@@ -9,6 +9,8 @@ import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math';
+import 'package:provider/provider.dart';
+import 'package:smart_iraq/src/core/providers/theme_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -174,6 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             body: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _buildBusinessInfoSection(profile)),
+                SliverToBoxAdapter(child: _buildSettingsSection()),
                 if (!isAdmin) _buildDashboardButton(),
                 if (isAdmin) _buildManagedAdsSection(),
                 SliverToBoxAdapter(
@@ -378,6 +381,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSettingsSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(15.0), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return SwitchListTile(
+            title: const Text('الوضع الليلي'),
+            subtitle: const Text('تفعيل المظهر الداكن للتطبيق'),
+            value: themeProvider.themeMode == ThemeMode.dark,
+            onChanged: (value) {
+              themeProvider.toggleTheme(value);
+            },
+            secondary: const Icon(Icons.dark_mode_outlined),
+          );
+        },
+      ),
     );
   }
 }
