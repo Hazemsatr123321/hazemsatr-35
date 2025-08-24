@@ -9,6 +9,7 @@ import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/providers/theme_provider.dart';
+import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -108,8 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 SliverToBoxAdapter(child: _buildBusinessInfoSection(profile)),
                 SliverToBoxAdapter(child: _buildSettingsSection()),
-                if (!isAdmin) _buildDashboardButton(),
-                // if (isAdmin) _buildManagedAdsSection(), // This would need conversion too
+                if (isAdmin) _buildAdminPanelButton() else _buildDashboardButton(),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -186,6 +186,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
       const Spacer(),
       Text(value, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
     ]);
+  }
+
+  Widget _buildAdminPanelButton() {
+    return SliverToBoxAdapter(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            CupertinoPageRoute(builder: (context) => const AdminPanelScreen()),
+          );
+        },
+        child: Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          elevation: 2,
+          color: CupertinoTheme.of(context).primaryColor,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Row(
+              children: [
+                const Icon(CupertinoIcons.shield_lefthalf_fill, color: Colors.white, size: 30),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'لوحة تحكم المدير',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const Icon(CupertinoIcons.forward, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildDashboardButton() {
