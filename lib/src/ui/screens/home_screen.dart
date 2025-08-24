@@ -84,12 +84,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final results = await Future.wait([productsFuture, requestsFuture, managedAdsFuture]);
 
-    final products = (results[0] as List).map((p) => Product.fromJson(p)).toList();
+    final allProducts = (results[0] as List).map((p) => Product.fromJson(p)).toList();
     final requests = (results[1] as List).map((r) => ProductRequest.fromJson(r)).toList();
     final managedAds = (results[2] as List).map((ad) => ManagedAd.fromJson(ad)).toList();
 
-    List<dynamic> combinedList = [...products, ...requests];
-    combinedList.shuffle();
+    final featuredProducts = allProducts.where((p) => p.is_featured).toList();
+    final regularProducts = allProducts.where((p) => !p.is_featured).toList();
+
+    List<dynamic> randomList = [...regularProducts, ...requests];
+    randomList.shuffle();
+
+    List<dynamic> combinedList = [...featuredProducts, ...randomList];
 
     if (managedAds.isNotEmpty) {
       final adIndex = min(4, combinedList.length);

@@ -16,6 +16,9 @@ class Product {
   final bool is_available_for_donation;
   final String? donation_description;
 
+  // Featured Field
+  final bool is_featured;
+
   Product({
     required this.id,
     required this.name,
@@ -29,6 +32,7 @@ class Product {
     this.unit_type,
     this.is_available_for_donation = false,
     this.donation_description,
+    this.is_featured = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -45,6 +49,7 @@ class Product {
       unit_type: json['unit_type'] as String?,
       is_available_for_donation: json['is_available_for_donation'] as bool? ?? false,
       donation_description: json['donation_description'] as String?,
+      is_featured: json['is_featured'] as bool? ?? false,
     );
   }
 }

@@ -120,6 +120,26 @@ class ProductCard extends StatelessWidget {
                 ],
               ),
             ),
+            // --- Featured Badge ---
+            if (product.is_featured)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.7),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.star, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ),
+              ),
              // --- Controls Section ---
             if (showControls)
               Positioned(

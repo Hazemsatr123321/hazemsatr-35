@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_iraq/src/ui/screens/admin/donation_methods_management_screen.dart';
+import 'package:smart_iraq/src/ui/screens/admin/feature_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/managed_ads_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/user_management_screen.dart';
 
@@ -23,6 +25,30 @@ class AdminPanelScreen extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 CupertinoPageRoute(builder: (context) => const UserManagementScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          CupertinoListTile(
+            title: const Text('تمييز الإعلانات'),
+            subtitle: const Text('اختيار إعلانات المستخدمين لعرضها بشكل مميز'),
+            leading: const Icon(CupertinoIcons.star_fill),
+            trailing: const Icon(CupertinoIcons.forward),
+            onTap: () {
+               Navigator.of(context).push(
+                CupertinoPageRoute(builder: (context) => const FeatureManagementScreen()),
+              );
+            },
+          ),
+          const Divider(),
+          CupertinoListTile(
+            title: const Text('إدارة طرق الدفع'),
+            subtitle: const Text('التحكم بحسابات التبرع اليدوية'),
+            leading: const Icon(CupertinoIcons.money_dollar_circle),
+            trailing: const Icon(CupertinoIcons.forward),
+            onTap: () {
+               Navigator.of(context).push(
+                CupertinoPageRoute(builder: (context) => const DonationMethodsManagementScreen()),
               );
             },
           ),
