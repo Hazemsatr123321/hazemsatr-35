@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
-import 'package:smart_iraq/src/models/managed_ad_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
@@ -20,7 +19,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<Profile> _profileFuture;
-  late Future<List<ManagedAd>> _managedAdsFuture;
   final _user = supabase.auth.currentUser;
 
   @override
@@ -32,9 +30,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _refreshAllData() {
     setState(() {
       _profileFuture = _getProfile();
-      if (_user != null) {
-        _managedAdsFuture = _getManagedAds();
-      }
     });
   }
 
@@ -49,7 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<List<Product>> _getProducts({required bool isAdmin}) async {
-    // ... (existing code)
     if (_user == null) return [];
     try {
       var query = supabase.from('products').select();
@@ -58,14 +52,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       final data = await query.order('created_at', ascending: false);
       return (data as List).map((json) => Product.fromJson(json)).toList();
-    } catch (e) { rethrow; }
-  }
-
-  Future<List<ManagedAd>> _getManagedAds() async {
-    // ... (existing code)
-     try {
-      final data = await supabase.from('managed_ads').select().order('created_at', ascending: false);
-      return (data as List).map((json) => ManagedAd.fromJson(json)).toList();
     } catch (e) { rethrow; }
   }
 
@@ -81,52 +67,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.of(context).push(CupertinoPageRoute(builder: (context) => EditProductScreen(product: product))).then((_) => _refreshAllData());
   }
 
-  // Admin-specific functions would also be converted to use Cupertino dialogs/modals
-  // For brevity, they are left as is, but would be updated in a full conversion.
-
   @override
   Widget build(BuildContext context) {
-    return Material( // Keep material for theme access if needed by children
-      child: CupertinoPageScaffold(
-        child: FutureBuilder<Profile>(
-          future: _profileFuture,
-          builder: (context, profileSnapshot) {
-            if (profileSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CupertinoActivityIndicator());
-            if (profileSnapshot.hasError || !profileSnapshot.hasData) return const Center(child: Text('لا يمكن تحميل الملف الشخصي.'));
+    return FutureBuilder<Profile>(
+      future: _profileFuture,
+      builder: (context, profileSnapshot) {
+        if (profileSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CupertinoActivityIndicator());
+        if (profileSnapshot.hasError || !profileSnapshot.hasData) return const Center(child: Text('لا يمكن تحميل الملف الشخصي.'));
 
-            final profile = profileSnapshot.data!;
-            final isAdmin = profile.role == 'admin';
+        final profile = profileSnapshot.data!;
+        final isAdmin = profile.role == 'admin';
 
-            return CustomScrollView(
-              slivers: [
-                CupertinoSliverNavigationBar(
-                  largeTitle: Text(isAdmin ? 'لوحة تحكم المدير' : 'ملفي الشخصي'),
-                  trailing: CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Icon(CupertinoIcons.square_arrow_right),
-                    onPressed: () => supabase.auth.signOut(),
-                  )
-                ),
-                SliverToBoxAdapter(child: _buildBusinessInfoSection(profile)),
-                SliverToBoxAdapter(child: _buildSettingsSection()),
-                if (isAdmin) _buildAdminPanelButton() else _buildDashboardButton(),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Text(isAdmin ? 'إعلانات المستخدمين' : 'إعلاناتي', style: CupertinoTheme.of(context).textTheme.navTitleTextStyle),
-                  ),
-                ),
-                _buildProductGrid(isAdmin),
-              ],
-            );
-          },
-        ),
-      ),
+        return CustomScrollView(
+          slivers: [
+            CupertinoSliverNavigationBar(
+              largeTitle: Text(isAdmin ? 'لوحة تحكم المدير' : 'ملفي الشخصي'),
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                child: const Icon(CupertinoIcons.square_arrow_right),
+                onPressed: () => supabase.auth.signOut(),
+              )
+            ),
+            SliverToBoxAdapter(child: _buildBusinessInfoSection(profile)),
+            SliverToBoxAdapter(child: _buildSettingsSection()),
+            if (isAdmin) _buildAdminPanelButton() else _buildDashboardButton(),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                child: Text(isAdmin ? 'إعلانات المستخدمين' : 'إعلاناتي', style: CupertinoTheme.of(context).textTheme.navTitleTextStyle),
+              ),
+            ),
+            _buildProductGrid(isAdmin),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildBusinessInfoSection(Profile profile) {
-    // ... (This widget uses Material Cards, which is acceptable for a mixed-design app)
     String verificationText;
     Color verificationColor;
     IconData verificationIcon;
@@ -148,31 +126,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         verificationIcon = Icons.hourglass_top;
     }
 
-    return Card(
-      margin: const EdgeInsets.all(16.0),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('معلومات الحساب التجاري', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            _buildInfoRow(CupertinoIcons.building_2_fill, 'اسم العمل', profile.business_name ?? 'غير محدد'),
-            const SizedBox(height: 12),
-            _buildInfoRow(CupertinoIcons.person_2, 'نوع الحساب', profile.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(verificationIcon, color: verificationColor, size: 20),
-                const SizedBox(width: 16),
-                Text('حالة الحساب:', style: Theme.of(context).textTheme.bodyLarge),
-                const Spacer(),
-                Text(verificationText, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: verificationColor)),
-              ],
-            ),
-          ],
+    return Material( // Using Material for Card and its elevation
+      color: Colors.transparent,
+      child: Card(
+        margin: const EdgeInsets.all(16.0),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('معلومات الحساب التجاري', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              _buildInfoRow(CupertinoIcons.building_2_fill, 'اسم العمل', profile.business_name ?? 'غير محدد'),
+              const SizedBox(height: 12),
+              _buildInfoRow(CupertinoIcons.person_2, 'نوع الحساب', profile.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(verificationIcon, color: verificationColor, size: 20),
+                  const SizedBox(width: 16),
+                  Text('حالة الحساب:', style: Theme.of(context).textTheme.bodyLarge),
+                  const Spacer(),
+                  Text(verificationText, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: verificationColor)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -189,33 +170,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildAdminPanelButton() {
-    return SliverToBoxAdapter(
+     return SliverToBoxAdapter(
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).push(
             CupertinoPageRoute(builder: (context) => const AdminPanelScreen()),
           );
         },
-        child: Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          elevation: 2,
-          color: CupertinoTheme.of(context).primaryColor,
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Row(
-              children: [
-                const Icon(CupertinoIcons.shield_lefthalf_fill, color: Colors.white, size: 30),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'لوحة تحكم المدير',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
+        child: Material(
+          color: Colors.transparent,
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            elevation: 2,
+            color: CupertinoTheme.of(context).primaryColor,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.shield_lefthalf_fill, color: Colors.white, size: 30),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'لوحة تحكم المدير',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-                const Icon(CupertinoIcons.forward, color: Colors.white),
-              ],
+                  const Icon(CupertinoIcons.forward, color: Colors.white),
+                ],
+              ),
             ),
           ),
         ),
@@ -224,7 +208,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildDashboardButton() {
-    // ... (This can remain a Material-style card for now)
      return SliverToBoxAdapter(
       child: GestureDetector(
         onTap: () {
@@ -232,26 +215,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
             CupertinoPageRoute(builder: (context) => const DashboardScreen()),
           );
         },
-        child: Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Row(
-              children: [
-                Icon(CupertinoIcons.chart_bar_square, color: CupertinoTheme.of(context).primaryColor, size: 30),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'عرض لوحة معلومات التاجر',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: CupertinoTheme.of(context).primaryColor,
+        child: Material(
+          color: Colors.transparent,
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.chart_bar_square, color: CupertinoTheme.of(context).primaryColor, size: 30),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'عرض لوحة معلومات التاجر',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: CupertinoTheme.of(context).primaryColor,
+                      ),
                     ),
                   ),
-                ),
-                Icon(CupertinoIcons.forward, color: CupertinoTheme.of(context).primaryColor),
-              ],
+                  Icon(CupertinoIcons.forward, color: CupertinoTheme.of(context).primaryColor),
+                ],
+              ),
             ),
           ),
         ),
@@ -260,7 +246,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProductGrid(bool isAdmin) {
-    // ... (This widget builds ProductCard, which is fine)
      return FutureBuilder<List<Product>>(
       future: _getProducts(isAdmin: isAdmin),
       builder: (context, productSnapshot) {
@@ -283,26 +268,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSettingsSection() {
-    // ... (This can remain a Material SwitchListTile inside a Card for now)
      return SliverToBoxAdapter(
-       child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
-            return SwitchListTile(
-              title: const Text('الوضع الليلي'),
-              subtitle: const Text('تفعيل المظهر الداكن للتطبيق'),
-              value: themeProvider.themeMode == ThemeMode.dark,
-              onChanged: (value) {
-                themeProvider.toggleTheme(value);
-              },
-              secondary: const Icon(CupertinoIcons.moon_stars),
-            );
-          },
-        ),
-         ),
+       child: Material(
+        color: Colors.transparent,
+         child: Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return SwitchListTile(
+                title: const Text('الوضع الليلي'),
+                subtitle: const Text('تفعيل المظهر الداكن للتطبيق'),
+                value: themeProvider.themeMode == ThemeMode.dark,
+                onChanged: (value) {
+                  themeProvider.toggleTheme(value);
+                },
+                secondary: const Icon(CupertinoIcons.moon_stars),
+              );
+            },
+          ),
+           ),
+       ),
      );
   }
-
-  // _buildManagedAdsSection would also need to be converted for a full iOS experience
 }

@@ -32,36 +32,27 @@ class MainNavigationScreen extends StatelessWidget {
         ],
       ),
       tabBuilder: (BuildContext context, int index) {
+        // Each CupertinoTabView will handle its own navigation stack
         switch (index) {
           case 0:
             return CupertinoTabView(builder: (context) {
-              return CupertinoPageScaffold(
-                child: HomeScreen(productRepository: SupabaseProductRepository()),
-              );
+              return HomeScreen(productRepository: SupabaseProductRepository());
             });
           case 1:
             return CupertinoTabView(builder: (context) {
-              return const CupertinoPageScaffold(
-                child: CharityScreen(),
-              );
+              return const CharityScreen();
             });
           case 2:
             return CupertinoTabView(builder: (context) {
-              return const CupertinoPageScaffold(
-                child: SmartAssistantScreen(),
-              );
+              return const SmartAssistantScreen();
             });
           case 3:
             return CupertinoTabView(builder: (context) {
-              return const CupertinoPageScaffold(
-                child: ProfileScreen(),
-              );
+              return const ProfileScreen();
             });
           default:
-            return CupertinoTabView(builder: (context) {
-              return CupertinoPageScaffold(
-                child: HomeScreen(productRepository: SupabaseProductRepository()),
-              );
+             return CupertinoTabView(builder: (context) {
+              return HomeScreen(productRepository: SupabaseProductRepository());
             });
         }
       },
