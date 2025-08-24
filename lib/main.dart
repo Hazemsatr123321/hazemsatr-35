@@ -31,13 +31,13 @@ class SmartIraqApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        return MaterialApp(
+        return CupertinoApp(
           title: 'العراق الذكي',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: themeProvider.themeMode,
+          theme: themeProvider.themeMode == ThemeMode.dark
+              ? AppTheme.darkCupertinoTheme
+              : AppTheme.lightCupertinoTheme,
           home: const SplashScreen(),
-          debugShowCheckedModeBanner: false, // As requested by user indirectly
+          debugShowCheckedModeBanner: false,
         );
       },
     );

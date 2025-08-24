@@ -1,9 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/charity_campaign_model.dart';
 import 'package:smart_iraq/src/models/donation_method_model.dart';
-import 'package:smart_iraq/src/models/product_model.dart'; // Import Product model
+import 'package:smart_iraq/src/models/product_model.dart';
 
 class CharityScreen extends StatefulWidget {
   const CharityScreen({super.key});
@@ -42,71 +43,76 @@ class _CharityScreenState extends State<CharityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('دعم القضايا الخيرية'),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          setState(() {
-             _charityDataFuture = _fetchCharityData();
-          });
-        },
-        child: FutureBuilder<Map<String, List<dynamic>>>(
-          future: _charityDataFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('حدث خطأ في تحميل البيانات: ${snapshot.error}'));
-            }
-            if (!snapshot.hasData || (snapshot.data!['campaigns']!.isEmpty && snapshot.data!['methods']!.isEmpty && snapshot.data!['donations']!.isEmpty)) {
-              return const Center(child: Text('لا توجد حملات أو تبرعات متاحة حالياً.'));
-            }
-
-            final campaigns = snapshot.data!['campaigns'] as List<CharityCampaign>;
-            final methods = snapshot.data!['methods'] as List<DonationMethod>;
-            final donations = snapshot.data!['donations'] as List<Product>;
-
-            return ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                if (methods.isNotEmpty) ...[
-                  _buildSectionTitle(context, 'طرق التبرع المالي'),
-                  ...methods.map((method) => _buildDonationMethodCard(context, method)),
-                  const SizedBox(height: 24),
-                  const Divider(),
-                ],
-                 if (donations.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _buildSectionTitle(context, 'تبرعات عينية من التجار'),
-                  ...donations.map((product) => _buildDonatedProductCard(context, product)),
-                   const SizedBox(height: 24),
-                  const Divider(),
-                ],
-                if (campaigns.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _buildSectionTitle(context, 'حملات التبرع المالي'),
-                  ...campaigns.map((campaign) => _buildCampaignCard(context, campaign)),
-                ],
-              ],
-            );
+    return Material( // Provide Material parent for Material-based widgets like Card
+      child: CupertinoPageScaffold(
+        navigationBar: const CupertinoNavigationBar(
+          middle: Text('دعم القضايا الخيرية'),
+        ),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            setState(() {
+               _charityDataFuture = _fetchCharityData();
+            });
           },
+          child: FutureBuilder<Map<String, List<dynamic>>>(
+            future: _charityDataFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CupertinoActivityIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('حدث خطأ في تحميل البيانات: ${snapshot.error}'));
+              }
+              if (!snapshot.hasData || (snapshot.data!['campaigns']!.isEmpty && snapshot.data!['methods']!.isEmpty && snapshot.data!['donations']!.isEmpty)) {
+                return const Center(child: Text('لا توجد حملات أو تبرعات متاحة حالياً.'));
+              }
+
+              final campaigns = snapshot.data!['campaigns'] as List<CharityCampaign>;
+              final methods = snapshot.data!['methods'] as List<DonationMethod>;
+              final donations = snapshot.data!['donations'] as List<Product>;
+
+              return ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  if (methods.isNotEmpty) ...[
+                    _buildSectionTitle(context, 'طرق التبرع المالي'),
+                    ...methods.map((method) => _buildDonationMethodCard(context, method)),
+                    const SizedBox(height: 24),
+                    const Divider(),
+                  ],
+                   if (donations.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildSectionTitle(context, 'تبرعات عينية من التجار'),
+                    ...donations.map((product) => _buildDonatedProductCard(context, product)),
+                     const SizedBox(height: 24),
+                    const Divider(),
+                  ],
+                  if (campaigns.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildSectionTitle(context, 'حملات التبرع المالي'),
+                    ...campaigns.map((campaign) => _buildCampaignCard(context, campaign)),
+                  ],
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
+    // Using CupertinoTheme for colors
+    final theme = CupertinoTheme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: theme.primaryColor,
+        ),
       ),
     );
   }
@@ -126,8 +132,8 @@ class _CharityScreenState extends State<CharityScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(method.accountDetails, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold))),
-                IconButton(
-                  icon: const Icon(Icons.copy),
+                CupertinoButton(
+                  child: const Icon(CupertinoIcons.doc_on_clipboard),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: method.accountDetails));
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +154,7 @@ class _CharityScreenState extends State<CharityScreen> {
   }
 
   Widget _buildDonatedProductCard(BuildContext context, Product product) {
-    return Card(
+     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       child: Padding(

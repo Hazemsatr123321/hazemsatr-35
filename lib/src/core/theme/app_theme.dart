@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -110,5 +111,22 @@ class AppTheme {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       color: const Color(0xFF1E1E1E),
     ),
+  );
+
+  // --- Cupertino Themes ---
+  static CupertinoThemeData get lightCupertinoTheme => const CupertinoThemeData(
+    brightness: Brightness.light,
+    primaryColor: _primaryColor,
+    primaryContrastingColor: Colors.white,
+    scaffoldBackgroundColor: Color(0xFFF5F5F5),
+    barBackgroundColor: Color(0xF0F9F9F9),
+  );
+
+   static CupertinoThemeData get darkCupertinoTheme => const CupertinoThemeData(
+    brightness: Brightness.dark,
+    primaryColor: _secondaryColor, // Use secondary for more pop in dark mode
+    primaryContrastingColor: Colors.black,
+    scaffoldBackgroundColor: Color(0xFF121212),
+    barBackgroundColor: Color(0xF01D1D1D),
   );
 }
