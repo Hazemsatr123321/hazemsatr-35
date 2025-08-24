@@ -176,7 +176,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   CupertinoTextFormFieldRow(controller: _nameController, prefix: const Text('الاسم'), placeholder: 'اسم المنتج', validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null),
                   CupertinoTextFormFieldRow(controller: _descriptionController, prefix: const Text('الوصف'), placeholder: 'وصف المنتج', maxLines: 4, validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null),
                   CupertinoTextFormFieldRow(controller: _priceController, prefix: const Text('السعر'), placeholder: 'سعر الوحدة', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty || double.tryParse(v) == null ? 'رقم صالح مطلوب' : null),
-                  custom.CupertinoListTile(title: const Text('الفئة'), additionalInfo: Text(_selectedCategory ?? 'اختر'), trailing: const custom.CupertinoListTileChevron(), onTap: () => _showPicker(context, options: _categories, onSelectedItemChanged: (val) => setState(() => _selectedCategory = val))),
+                  custom.CupertinoListTile(
+                    title: const Text('الفئة'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_selectedCategory ?? 'اختر'),
+                        const SizedBox(width: 8),
+                        const custom.CupertinoListTileChevron(),
+                      ],
+                    ),
+                    onTap: () => _showPicker(context, options: _categories, onSelectedItemChanged: (val) => setState(() => _selectedCategory = val))),
                 ],
               ),
               CupertinoFormSection(
@@ -184,7 +194,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
                  children: [
                     CupertinoTextFormFieldRow(controller: _stockQuantityController, prefix: const Text('الكمية'), placeholder: 'الكمية المتوفرة', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'رقم صالح مطلوب' : null),
                     CupertinoTextFormFieldRow(controller: _minOrderQuantityController, prefix: const Text('أقل طلب'), placeholder: 'أقل كمية للطلب', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'رقم صالح مطلوب' : null),
-                    custom.CupertinoListTile(title: const Text('الوحدة'), additionalInfo: Text(_selectedUnitType ?? 'اختر'), trailing: const custom.CupertinoListTileChevron(), onTap: () => _showPicker(context, options: _unitTypes, onSelectedItemChanged: (val) => setState(() => _selectedUnitType = val))),
+                    custom.CupertinoListTile(
+                      title: const Text('الوحدة'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_selectedUnitType ?? 'اختر'),
+                          const SizedBox(width: 8),
+                          const custom.CupertinoListTileChevron(),
+                        ],
+                      ),
+                      onTap: () => _showPicker(context, options: _unitTypes, onSelectedItemChanged: (val) => setState(() => _selectedUnitType = val))),
                  ],
               ),
               CupertinoFormSection(

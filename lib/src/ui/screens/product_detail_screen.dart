@@ -113,20 +113,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   CupertinoSliverNavigationBar(
                     largeTitle: Text(product.name),
                     stretch: true,
-                    flexibleSpaceBar: FlexibleSpaceBar(
-                      background: Hero(
-                        tag: 'product-image-${product.id}',
-                        child: product.imageUrl != null
-                        ? Image.network(
-                          product.imageUrl!,
-                          fit: BoxFit.cover,
-                          color: CupertinoColors.black.withOpacity(0.3),
-                          colorBlendMode: BlendMode.darken,
-                          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.systemGrey)),
-                        )
-                        : Container(color: CupertinoColors.systemGrey, child: const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.white))),
-                      ),
-                    ),
                   ),
                   SliverList(
                     delegate: SliverChildListDelegate(
