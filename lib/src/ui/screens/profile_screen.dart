@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
@@ -11,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/providers/theme_provider.dart';
 import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -108,54 +109,101 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildBusinessInfoSection(Profile profile) {
     String verificationText;
-    Color verificationColor;
+    CupertinoDynamicColor verificationColor;
     IconData verificationIcon;
+    final theme = CupertinoTheme.of(context);
+    final textTheme = theme.textTheme;
 
     switch (profile.verification_status) {
       case 'approved':
         verificationText = 'موثق';
-        verificationColor = Colors.green;
-        verificationIcon = Icons.verified;
+        verificationColor = CupertinoColors.activeGreen;
+        verificationIcon = CupertinoIcons.checkmark_seal_fill;
         break;
       case 'rejected':
         verificationText = 'مرفوض';
-        verificationColor = Colors.red;
-        verificationIcon = Icons.error;
+        verificationColor = CupertinoColors.destructiveRed;
+        verificationIcon = CupertinoIcons.xmark_seal_fill;
         break;
       default:
         verificationText = 'قيد المراجعة';
-        verificationColor = Colors.orange;
-        verificationIcon = Icons.hourglass_top;
+        verificationColor = CupertinoColors.systemYellow;
+        verificationIcon = CupertinoIcons.hourglass;
     }
 
-    return Material( // Using Material for Card and its elevation
-      color: Colors.transparent,
-      child: Card(
-        margin: const EdgeInsets.all(16.0),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('معلومات الحساب التجاري', style: textTheme.navTitleTextStyle),
+          const SizedBox(height: 16),
+          _buildInfoRow(CupertinoIcons.building_2_fill, 'اسم العمل', profile.business_name ?? 'غير محدد'),
+          const SizedBox(height: 12),
+          _buildInfoRow(CupertinoIcons.person_2, 'نوع الحساب', profile.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
+          const SizedBox(height: 12),
+          Row(
             children: [
-              Text('معلومات الحساب التجاري', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              _buildInfoRow(CupertinoIcons.building_2_fill, 'اسم العمل', profile.business_name ?? 'غير محدد'),
-              const SizedBox(height: 12),
-              _buildInfoRow(CupertinoIcons.person_2, 'نوع الحساب', profile.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(verificationIcon, color: verificationColor, size: 20),
-                  const SizedBox(width: 16),
-                  Text('حالة الحساب:', style: Theme.of(context).textTheme.bodyLarge),
-                  const Spacer(),
-                  Text(verificationText, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: verificationColor)),
-                ],
+              Icon(verificationIcon, color: verificationColor, size: 20),
+              const SizedBox(width: 16),
+              Text('حالة الحساب:', style: textTheme.textStyle),
+              const Spacer(),
+              Text(verificationText, style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold, color: verificationColor)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(height: 1, color: CupertinoColors.separator.resolveFrom(context)),
+          const SizedBox(height: 12),
+          _buildRatingSection(profile),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+     final textTheme = CupertinoTheme.of(context).textTheme;
+     return Row(children: [
+      Icon(icon, color: CupertinoColors.secondaryLabel.resolveFrom(context), size: 20),
+      const SizedBox(width: 16),
+      Text('$label:', style: textTheme.textStyle),
+      const Spacer(),
+      Text(value, style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold)),
+    ]);
+  }
+
+  Widget _buildAdminPanelButton() {
+    return SliverToBoxAdapter(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            CupertinoPageRoute(builder: (context) => const AdminPanelScreen()),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: CupertinoTheme.of(context).primaryColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const Icon(CupertinoIcons.shield_lefthalf_fill, color: CupertinoColors.white, size: 30),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'لوحة تحكم المدير',
+                  style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(
+                    color: CupertinoColors.white,
+                  ),
+                ),
               ),
-            const Divider(height: 24),
-            _buildRatingSection(profile),
+              const Icon(CupertinoIcons.forward, color: CupertinoColors.white),
             ],
           ),
         ),
@@ -163,86 +211,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-     return Row(children: [
-      Icon(icon, color: Colors.grey.shade600, size: 20),
-      const SizedBox(width: 16),
-      Text('$label:', style: Theme.of(context).textTheme.bodyLarge),
-      const Spacer(),
-      Text(value, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
-    ]);
-  }
-
-  Widget _buildAdminPanelButton() {
-     return SliverToBoxAdapter(
-      child: GestureDetector(
-        onTap: () {
-          Navigator.of(context).push(
-            CupertinoPageRoute(builder: (context) => const AdminPanelScreen()),
-          );
-        },
-        child: Material(
-          color: Colors.transparent,
-          child: Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            elevation: 2,
-            color: CupertinoTheme.of(context).primaryColor,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
-                children: [
-                  const Icon(CupertinoIcons.shield_lefthalf_fill, color: Colors.white, size: 30),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'لوحة تحكم المدير',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const Icon(CupertinoIcons.forward, color: Colors.white),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDashboardButton() {
-     return SliverToBoxAdapter(
+    return SliverToBoxAdapter(
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).push(
             CupertinoPageRoute(builder: (context) => const DashboardScreen()),
           );
         },
-        child: Material(
-          color: Colors.transparent,
-          child: Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
-                children: [
-                  Icon(CupertinoIcons.chart_bar_square, color: CupertinoTheme.of(context).primaryColor, size: 30),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'عرض لوحة معلومات التاجر',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: CupertinoTheme.of(context).primaryColor,
-                      ),
-                    ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.all(24.0),
+          decoration: BoxDecoration(
+            color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(CupertinoIcons.chart_bar_square, color: CupertinoTheme.of(context).primaryColor, size: 30),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'عرض لوحة معلومات التاجر',
+                  style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(
+                    color: CupertinoTheme.of(context).primaryColor,
                   ),
-                  Icon(CupertinoIcons.forward, color: CupertinoTheme.of(context).primaryColor),
-                ],
+                ),
               ),
-            ),
+              Icon(CupertinoIcons.forward, color: CupertinoTheme.of(context).primaryColor),
+            ],
           ),
         ),
       ),
@@ -263,7 +260,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.75),
             delegate: SliverChildBuilderDelegate((context, index) {
               final product = products[index];
-              return ProductCard(product: product, showControls: isAdmin || product.userId == _user?.id, onDelete: () => _deleteProduct(product), onEdit: () => _editProduct(product));
+              return ProductCard(product: product, showControls: isAdmin || product.userId == _user?.id, onDelete: () => _deleteProduct(product), onEdit: () => _editProduct(product))
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: (100 * (index % 2)).ms)
+                  .slideY(begin: 0.5, duration: 500.ms, delay: (100 * (index % 2)).ms, curve: Curves.easeOut);
             }, childCount: products.length),
           ),
         );
@@ -272,30 +272,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSettingsSection() {
-     return SliverToBoxAdapter(
-       child: Material(
-        color: Colors.transparent,
-         child: Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return SwitchListTile(
-                title: const Text('الوضع الليلي'),
-                subtitle: const Text('تفعيل المظهر الداكن للتطبيق'),
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        decoration: BoxDecoration(
+          color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return CupertinoListTile(
+              title: const Text('الوضع الليلي'),
+              subtitle: const Text('تفعيل المظهر الداكن للتطبيق'),
+              leading: const Icon(CupertinoIcons.moon_stars),
+              trailing: CupertinoSwitch(
                 value: themeProvider.themeMode == ThemeMode.dark,
                 onChanged: (value) {
                   themeProvider.toggleTheme(value);
                 },
-                secondary: const Icon(CupertinoIcons.moon_stars),
-              );
-            },
-          ),
-           ),
-       ),
-     );
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   Widget _buildRatingSection(Profile profile) {
+    final textTheme = CupertinoTheme.of(context).textTheme;
     return GestureDetector(
       onTap: () {
         if (profile.rating_count > 0) {
@@ -312,10 +316,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 'تقييم التاجر',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: textTheme.body.copyWith(fontWeight: FontWeight.bold),
               ),
               if (profile.rating_count > 0)
-                const Icon(CupertinoIcons.forward, size: 18, color: Colors.grey)
+                const Icon(CupertinoIcons.forward, size: 18, color: CupertinoColors.systemGrey)
             ],
           ),
           const SizedBox(height: 8),
@@ -325,7 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(width: 8),
               Text(
                 '${profile.average_rating.toStringAsFixed(1)} (${profile.rating_count} تقييم)',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -346,7 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } else {
           icon = CupertinoIcons.star_fill;
         }
-        return Icon(icon, color: Colors.amber, size: 20);
+        return Icon(icon, color: CupertinoColors.systemYellow, size: 20);
       }),
     );
   }

@@ -14,6 +14,7 @@ import 'package:smart_iraq/src/models/app_banner_model.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/screens/create_request_screen.dart';
 import 'dart:math';
+import 'package:flutter_animate/flutter_animate.dart';
 
 // Note: The AppBars and FABs are now handled by MainNavigationScreen.
 // This screen is now just the body content.
@@ -105,13 +106,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBanner() {
     if (_isBannerLoading || _banner == null) return const SizedBox.shrink();
+    final theme = CupertinoTheme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12.0),
       color: _banner!.backgroundColor,
       child: Text(
         _banner!.message,
-        style: TextStyle(color: _banner!.textColor, fontWeight: FontWeight.bold),
+        style: theme.textTheme.textStyle.copyWith(color: _banner!.textColor, fontWeight: FontWeight.bold),
         textAlign: TextAlign.center,
       ),
     );
@@ -122,18 +124,30 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_profile?.verification_status != 'approved') return const SizedBox.shrink();
 
     if (_profile!.business_type == 'wholesaler') {
-      return FloatingActionButton.extended(
+      return CupertinoButton.filled(
         onPressed: () => Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const AddProductScreen())),
-        label: const Text('إضافة منتج'),
-        icon: const Icon(Icons.add),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(CupertinoIcons.add),
+            SizedBox(width: 8),
+            Text('إضافة منتج'),
+          ],
+        ),
       );
     }
 
     if (_profile!.business_type == 'retailer') {
-      return FloatingActionButton.extended(
+      return CupertinoButton.filled(
         onPressed: () => Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const CreateRequestScreen())),
-        label: const Text('طلب بضاعة'),
-        icon: const Icon(CupertinoIcons.add_circled),
+         child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(CupertinoIcons.add_circled),
+            SizedBox(width: 8),
+            Text('طلب بضاعة'),
+          ],
+        ),
       );
     }
     return const SizedBox.shrink();
@@ -141,63 +155,81 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // The Scaffold and AppBar are now part of the parent MainNavigationScreen
-    return Material( // Add Material widget to provide text styles and other Material dependencies for cards.
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              _buildBanner(),
-              Expanded(
-                child: FutureBuilder<List<dynamic>>(
-                  future: _feedFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return GridView.builder(
-                        padding: const EdgeInsets.all(12.0),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 200, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.75,
-                        ),
-                        itemCount: 8,
-                        itemBuilder: (context, index) => const ProductCardShimmer(),
-                      );
-                    }
-                    if (snapshot.hasError) return Center(child: Text('حدث خطأ: ${snapshot.error}'));
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('لا توجد إعلانات لعرضها حالياً.'));
-
-                    final feedItems = snapshot.data!;
-                    return RefreshIndicator(
-                      onRefresh: () async => _fetchData(),
-                      child: GridView.builder(
-                        padding: const EdgeInsets.all(12.0),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 200, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.75,
-                        ),
-                        itemCount: feedItems.length,
-                        itemBuilder: (context, index) {
-                          final item = feedItems[index];
-                          if (item is ManagedAd) return ManagedAdCard(ad: item);
-                          if (item is Product) return ProductCard(product: item);
-                          if (item is ProductRequest) return ProductRequestCard(request: item);
-                          return const SizedBox.shrink();
-                        },
+    return Stack(
+      children: [
+        Column(
+          children: [
+            _buildBanner(),
+            Expanded(
+              child: FutureBuilder<List<dynamic>>(
+                future: _feedFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(12.0),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 200,
+                        crossAxisSpacing: 12.0,
+                        mainAxisSpacing: 12.0,
+                        childAspectRatio: 0.75,
                       ),
+                      itemCount: 8,
+                      itemBuilder: (context, index) => const ProductCardShimmer(),
                     );
-                  },
-                ),
+                  }
+                  if (snapshot.hasError) return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('لا توجد إعلانات لعرضها حالياً.'));
+                  }
+
+                  final feedItems = snapshot.data!;
+                  return CustomScrollView(
+                    slivers: [
+                      CupertinoSliverRefreshControl(onRefresh: () async => _fetchData()),
+                      SliverPadding(
+                        padding: const EdgeInsets.all(12.0),
+                        sliver: SliverGrid(
+                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 200,
+                            crossAxisSpacing: 12.0,
+                            mainAxisSpacing: 12.0,
+                            childAspectRatio: 0.75,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final item = feedItems[index];
+                              Widget card;
+                              if (item is ManagedAd) {
+                                card = ManagedAdCard(ad: item);
+                              } else if (item is Product) {
+                                card = ProductCard(product: item);
+                              } else if (item is ProductRequest) {
+                                card = ProductRequestCard(request: item);
+                              } else {
+                                card = const SizedBox.shrink();
+                              }
+                              return card.animate().fadeIn(duration: 500.ms, delay: (100 * (index % 4)).ms).slideY(begin: 0.5, duration: 500.ms, delay: (100 * (index % 4)).ms, curve: Curves.easeOut);
+                            },
+                            childCount: feedItems.length,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ],
-          ),
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _buildFloatingActionButton(context),
             ),
-          )
-        ],
-      ),
+          ],
+        ),
+        Positioned(
+          bottom: 16,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: _buildFloatingActionButton(context),
+          ),
+        )
+      ],
     );
   }
 }

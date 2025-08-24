@@ -1,5 +1,4 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart';
 import 'package:smart_iraq/src/ui/screens/admin/donation_methods_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/feature_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/managed_ads_management_screen.dart';
@@ -28,7 +27,10 @@ class AdminPanelScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(),
+          Padding(
+            padding: const EdgeInsets.only(left: 58.0),
+            child: Container(height: 0.5, color: CupertinoColors.separator.resolveFrom(context)),
+          ),
           CupertinoListTile(
             title: const Text('تمييز الإعلانات'),
             subtitle: const Text('اختيار إعلانات المستخدمين لعرضها بشكل مميز'),
@@ -40,7 +42,10 @@ class AdminPanelScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(),
+          Padding(
+            padding: const EdgeInsets.only(left: 58.0),
+            child: Container(height: 0.5, color: CupertinoColors.separator.resolveFrom(context)),
+          ),
           CupertinoListTile(
             title: const Text('إدارة طرق الدفع'),
             subtitle: const Text('التحكم بحسابات التبرع اليدوية'),
@@ -52,7 +57,10 @@ class AdminPanelScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(),
+          Padding(
+            padding: const EdgeInsets.only(left: 58.0),
+            child: Container(height: 0.5, color: CupertinoColors.separator.resolveFrom(context)),
+          ),
           CupertinoListTile(
             title: const Text('إدارة الإعلانات المدارة'),
             subtitle: const Text('التحكم بالإعلانات التي تظهر في الصفحة الرئيسية'),

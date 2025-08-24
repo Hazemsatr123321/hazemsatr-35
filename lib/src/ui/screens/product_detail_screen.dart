@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
+import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/leave_review_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -40,6 +40,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
+  void _showErrorDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('خطأ'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('موافق'),
+            onPressed: () => Navigator.of(context).pop(),
+          )
+        ],
+      ),
+    );
+  }
+
   Future<void> _startChat(String sellerId, String productName) async {
     try {
       final roomId = await _chatRepository.findOrCreateChatRoom(sellerId);
@@ -56,25 +72,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       }
     } catch (error) {
        if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('حدث خطأ أثناء بدء المحادثة.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        _showErrorDialog('حدث خطأ أثناء بدء المحادثة.');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CupertinoPageScaffold(
       key: const Key('productDetailScreen'),
-      body: FutureBuilder<Product>(
+      child: FutureBuilder<Product>(
         future: _productFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CupertinoActivityIndicator());
           }
           if (snapshot.hasError) {
             return Center(child: Text('حدث خطأ: ${snapshot.error}'));
@@ -87,30 +98,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
           return CustomScrollView(
             slivers: [
-              SliverAppBar(
-                expandedHeight: 350.0,
-                pinned: true,
+              CupertinoSliverNavigationBar(
+                largeTitle: Text(product.name),
                 stretch: true,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                flexibleSpace: FlexibleSpaceBar(
-                  centerTitle: true,
-                  titlePadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
-                  title: Text(
-                    product.name,
-                    style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 4.0, color: Colors.black54)])
-                  ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.2, curve: Curves.easeOut),
-                  background: Hero(
-                    tag: 'product-image-${product.id}',
-                    child: product.imageUrl != null
-                    ? Image.network(
-                      product.imageUrl!,
-                      fit: BoxFit.cover,
-                      color: Colors.black.withOpacity(0.3),
-                      colorBlendMode: BlendMode.darken,
-                      errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 100, color: Colors.grey)),
-                    )
-                    : Container(color: Colors.grey, child: const Center(child: Icon(Icons.image_not_supported, size: 100, color: Colors.white))),
-                  ),
+                background: Hero(
+                  tag: 'product-image-${product.id}',
+                  child: product.imageUrl != null
+                  ? Image.network(
+                    product.imageUrl!,
+                    fit: BoxFit.cover,
+                    color: CupertinoColors.black.withOpacity(0.3),
+                    colorBlendMode: BlendMode.darken,
+                    errorBuilder: (context, error, stackTrace) => const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.systemGrey)),
+                  )
+                  : Container(color: CupertinoColors.systemGrey, child: const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.white))),
                 ),
               ),
               SliverList(
@@ -131,7 +132,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           const SizedBox(height: 12.0),
                           Text(
                             product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6, color: Colors.black87),
+                            style: CupertinoTheme.of(context).textTheme.body.copyWith(height: 1.6, color: CupertinoColors.label),
                           ),
                         ].animate(interval: 100.ms).fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOut),
                       ),
@@ -153,36 +154,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: isMyProduct
-                ? ElevatedButton.icon(
+                ? CupertinoButton.filled(
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      // TODO: Navigate to Edit Product Screen
+                      Navigator.of(context).push(
+                        CupertinoPageRoute(builder: (context) => EditProductScreen(product: product))
+                      );
                     },
-                    icon: const Icon(Icons.edit),
-                    label: const Text('تعديل المنتج'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      backgroundColor: Theme.of(context).colorScheme.secondary
-                    ),
+                    child: const Text('تعديل المنتج'),
                   )
                 : Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ElevatedButton.icon(
+                    CupertinoButton.filled(
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         _startChat(product.userId, product.name);
                       },
-                      icon: const Icon(CupertinoIcons.chat_bubble_2_fill),
-                      label: const Text('مراسلة التاجر'),
-                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                      child: const Text('مراسلة التاجر'),
                     ),
-                    TextButton(
+                    CupertinoButton(
                       onPressed: () {
                         HapticFeedback.lightImpact();
                          Navigator.of(context).push(
@@ -201,54 +193,70 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildPriceChip(BuildContext context, Product product) {
-    return Chip(
-      avatar: Icon(Icons.sell, color: Theme.of(context).colorScheme.primary),
-      label: Text(
-        '${product.price} د.ع / ${product.unit_type ?? 'وحدة'}',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold
-        ),
-      ),
+    final theme = CupertinoTheme.of(context);
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      decoration: BoxDecoration(
+        color: theme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+           Icon(CupertinoIcons.tag_solid, color: theme.primaryColor),
+           const SizedBox(width: 8),
+           Text(
+            '${product.price} د.ع / ${product.unit_type ?? 'وحدة'}',
+            style: theme.textTheme.textStyle.copyWith(
+              color: theme.primaryColor,
+              fontWeight: FontWeight.bold
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+      style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
   Widget _buildB2BInfoGrid(BuildContext context, Product product) {
-    return Wrap(
-      spacing: 16.0,
-      runSpacing: 16.0,
-      children: [
-        SizedBox(
-          width: (MediaQuery.of(context).size.width / 2) - 28, // Adjust for padding and spacing
-          child: _buildInfoCard(context, Icons.inventory_2_outlined, 'الكمية المتوفرة', '${product.stock_quantity ?? 0}')
-        ),
-        SizedBox(
-          width: (MediaQuery.of(context).size.width / 2) - 28,
-          child: _buildInfoCard(context, Icons.production_quantity_limits, 'أقل كمية للطلب', '${product.minimum_order_quantity ?? 1}')
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth / 2) - 8;
+        return Wrap(
+          spacing: 16.0,
+          runSpacing: 16.0,
+          children: [
+            SizedBox(
+              width: itemWidth,
+              child: _buildInfoCard(context, CupertinoIcons.cube_box, 'الكمية المتوفرة', '${product.stock_quantity ?? 0}')
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _buildInfoCard(context, CupertinoIcons.shopping_cart, 'أقل كمية للطلب', '${product.minimum_order_quantity ?? 1}')
+            ),
+          ],
+        );
+      }
     );
   }
 
   Widget _buildInfoCard(BuildContext context, IconData icon, String label, String value) {
+    final theme = CupertinoTheme.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        border: Border.all(color: CupertinoColors.systemGrey5.resolveFrom(context)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: CupertinoColors.systemGrey.withOpacity(0.15),
             blurRadius: 10,
             offset: const Offset(0, 4)
           )
@@ -258,10 +266,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Theme.of(context).colorScheme.secondary, size: 28),
+          Icon(icon, color: theme.primaryColor, size: 28),
           const SizedBox(height: 8),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
-          Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Text(label, style: theme.textTheme.footnote.copyWith(color: CupertinoColors.secondaryLabel.resolveFrom(context))),
+          Text(value, style: theme.textTheme.headline.copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/managed_ad_model.dart';
 import 'package:smart_iraq/src/ui/screens/admin/add_edit_managed_ad_screen.dart';
@@ -30,7 +29,7 @@ class _ManagedAdsManagementScreenState extends State<ManagedAdsManagementScreen>
     }
   }
 
-  void _refreshAds() {
+  Future<void> _refreshAds() async {
     setState(() {
       _adsFuture = _fetchAds();
     });
@@ -40,6 +39,22 @@ class _ManagedAdsManagementScreenState extends State<ManagedAdsManagementScreen>
     Navigator.of(context).push(
       CupertinoPageRoute(builder: (context) => AddEditManagedAdScreen(ad: ad)),
     ).then((_) => _refreshAds());
+  }
+
+  void _showErrorDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('خطأ'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('موافق'),
+            onPressed: () => Navigator.of(context).pop(),
+          )
+        ],
+      ),
+    );
   }
 
   Future<void> _deleteAd(String adId) async {
@@ -60,9 +75,7 @@ class _ManagedAdsManagementScreenState extends State<ManagedAdsManagementScreen>
         _refreshAds();
       } catch(e) {
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ في الحذف: $e'), backgroundColor: Colors.red),
-          );
+           _showErrorDialog('خطأ في الحذف: $e');
         }
       }
     }
@@ -93,54 +106,90 @@ class _ManagedAdsManagementScreenState extends State<ManagedAdsManagementScreen>
           }
 
           final ads = snapshot.data!;
-          return RefreshIndicator(
-            onRefresh: () async => _refreshAds(),
-            child: ListView.builder(
-              itemCount: ads.length,
-              itemBuilder: (context, index) {
-                final ad = ads[index];
-                return Material( // For ListTile ripple effect
-                  child: ListTile(
-                    leading: ad.imageUrl.isNotEmpty
-                      ? Image.network(ad.imageUrl, width: 60, height: 60, fit: BoxFit.cover)
-                      : Container(width: 60, height: 60, color: Colors.grey.shade200, child: const Icon(CupertinoIcons.photo)),
-                    title: Text(ad.title),
-                    subtitle: Text(ad.isActive ? 'فعال' : 'غير فعال', style: TextStyle(color: ad.isActive ? CupertinoColors.activeGreen : CupertinoColors.systemGrey)),
-                    trailing: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      child: const Icon(CupertinoIcons.ellipsis),
-                      onPressed: () {
-                        showCupertinoModalPopup(context: context, builder: (context) => CupertinoActionSheet(
-                          actions: [
-                            CupertinoActionSheetAction(
-                              child: const Text('تعديل'),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _navigateToAddEditScreen(ad: ad);
-                              },
-                            ),
-                             CupertinoActionSheetAction(
-                              isDestructiveAction: true,
-                              child: const Text('حذف'),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _deleteAd(ad.id);
-                              },
-                            )
-                          ],
-                          cancelButton: CupertinoActionSheetAction(
-                            child: const Text('إلغاء'),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ));
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
+          return CustomScrollView(
+            slivers: [
+              CupertinoSliverRefreshControl(
+                 onRefresh: _refreshAds,
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                     final ad = ads[index];
+                      return _buildAdListItem(ad);
+                  },
+                  childCount: ads.length,
+                ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildAdListItem(ManagedAd ad) {
+    return GestureDetector(
+      onTap: () {
+        showCupertinoModalPopup(context: context, builder: (context) => CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              child: const Text('تعديل'),
+              onPressed: () {
+                Navigator.pop(context);
+                _navigateToAddEditScreen(ad: ad);
+              },
+            ),
+              CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              child: const Text('حذف'),
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteAd(ad.id);
+              },
+            )
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            child: const Text('إلغاء'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: CupertinoColors.separator, width: 0.5)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 60,
+              height: 60,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: ad.imageUrl.isNotEmpty
+                  ? Image.network(
+                      ad.imageUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, progress) => progress == null ? child : const CupertinoActivityIndicator(),
+                      errorBuilder: (context, error, stackTrace) => const Icon(CupertinoIcons.photo, color: CupertinoColors.systemGrey),
+                    )
+                  : Container(color: CupertinoColors.systemGrey5, child: const Icon(CupertinoIcons.photo, color: CupertinoColors.systemGrey)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ad.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(ad.isActive ? 'فعال' : 'غير فعال', style: TextStyle(color: ad.isActive ? CupertinoColors.activeGreen : CupertinoColors.systemGrey)),
+                ],
+              ),
+            ),
+            const Icon(CupertinoIcons.ellipsis, color: CupertinoColors.systemGrey2),
+          ],
+        ),
       ),
     );
   }

@@ -1,7 +1,9 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart'; // Using Material Form for validation
 import 'package:image_picker/image_picker.dart';
-import 'package:smart_iraq/main.dart'; // For supabase client
+import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart';
+import 'package:smart_iraq/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -38,6 +40,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _priceController.dispose();
     _stockQuantityController.dispose();
     _minOrderQuantityController.dispose();
+    _donationDescriptionController.dispose();
     super.dispose();
   }
 
@@ -51,14 +54,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
+  void _showErrorDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('خطأ'),
+        content: Text(message),
+        actions: [CupertinoDialogAction(isDefaultAction: true, child: const Text('موافق'), onPressed: () => Navigator.of(context).pop())],
+      )
+    );
+  }
+
   Future<void> _saveProduct() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
+
     if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('الرجاء اختيار صورة للمنتج.'), backgroundColor: Theme.of(context).colorScheme.error),
-      );
+      _showErrorDialog('الرجاء اختيار صورة للمنتج.');
       return;
     }
 
@@ -93,16 +104,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ المنتج بنجاح!'), backgroundColor: Colors.green),
-        );
         Navigator.of(context).pop();
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: ${error.toString()}'), backgroundColor: Theme.of(context).colorScheme.error),
-        );
+        _showErrorDialog('حدث خطأ: ${error.toString()}');
       }
     } finally {
       if (mounted) {
@@ -111,137 +117,96 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
+  void _showPicker(BuildContext context, {required List<String> options, required Function(String) onSelectedItemChanged}) {
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (BuildContext context) => Container(
+          height: 216,
+          padding: const EdgeInsets.only(top: 6.0),
+          margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          color: CupertinoColors.systemBackground.resolveFrom(context),
+          child: SafeArea(
+            top: false,
+            child: CupertinoPicker(
+              magnification: 1.22,
+              squeeze: 1.2,
+              useMagnifier: true,
+              itemExtent: 32.0,
+              onSelectedItemChanged: (int selectedIndex) {
+                  onSelectedItemChanged(options[selectedIndex]);
+              },
+              children: List<Widget>.generate(options.length, (int index) {
+                return Center(child: Text(options[index]));
+              }),
+            ),
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('إضافة منتج جملة جديد')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(middle: Text('إضافة منتج جملة جديد')),
+      child: SafeArea(
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                InkWell(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 200,
-                    decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(10)),
-                    child: _selectedImage == null
-                        ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_a_photo, size: 50, color: Colors.grey), SizedBox(height: 8), Text('أضف صورة')]))
-                        : ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.file(File(_selectedImage!.path), fit: BoxFit.cover)),
-                  ),
-                ),
-                const SizedBox(height: 24.0),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'اسم المنتج', border: OutlineInputBorder()),
-                  validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال اسم المنتج' : null,
-                ),
-                const SizedBox(height: 16.0),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'وصف المنتج', border: OutlineInputBorder()),
-                  maxLines: 4,
-                  validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال وصف للمنتج' : null,
-                ),
-                const SizedBox(height: 16.0),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _priceController,
-                        decoration: const InputDecoration(labelText: 'السعر (للوحدة)', border: OutlineInputBorder()),
-                        keyboardType: TextInputType.number,
-                        validator: (v) => v == null || v.isEmpty || double.tryParse(v) == null ? 'أدخل سعر صحيح' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedUnitType,
-                        decoration: const InputDecoration(labelText: 'وحدة القياس', border: OutlineInputBorder()),
-                        items: _unitTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                        onChanged: (v) => setState(() => _selectedUnitType = v),
-                        validator: (v) => v == null ? 'اختر وحدة' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                 Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _stockQuantityController,
-                        decoration: const InputDecoration(labelText: 'الكمية المتوفرة', border: OutlineInputBorder()),
-                        keyboardType: TextInputType.number,
-                        validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'أدخل كمية صحيحة' : null,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _minOrderQuantityController,
-                        decoration: const InputDecoration(labelText: 'أقل كمية للطلب', border: OutlineInputBorder()),
-                        keyboardType: TextInputType.number,
-                        validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'أدخل كمية صحيحة' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory,
-                  decoration: const InputDecoration(labelText: 'الفئة', border: OutlineInputBorder()),
-                  items: _categories.map((e) => DropdownMenuItem<String>(value: e, child: Text(e))).toList(),
-                  onChanged: (v) => setState(() => _selectedCategory = v),
-                  validator: (v) => v == null ? 'الرجاء اختيار فئة' : null,
-                ),
-                const SizedBox(height: 24.0),
-                // --- Donation Section ---
-                Container(
-                  padding: const EdgeInsets.all(12.0),
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.green.shade300),
+                    color: CupertinoColors.lightBackgroundGray,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: CupertinoColors.separator)
                   ),
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        title: const Text('التبرع بجزء من المنتج للفقراء'),
-                        subtitle: const Text('سيتم عرض هذا التبرع في صفحة دعم الفقراء'),
-                        value: _isDonation,
-                        onChanged: (bool value) {
-                          setState(() {
-                            _isDonation = value;
-                          });
-                        },
-                        activeColor: Colors.green,
-                      ),
-                      if (_isDonation) ...[
-                        const SizedBox(height: 8.0),
-                        TextFormField(
-                          controller: _donationDescriptionController,
-                          decoration: const InputDecoration(
-                            labelText: 'وصف الجزء المتبرع به',
-                            hintText: 'مثال: كرتونة واحدة من كل 10 كراتين',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (v) => _isDonation && (v == null || v.isEmpty) ? 'الرجاء إدخال وصف للتبرع' : null,
-                        ),
-                      ]
-                    ],
-                  ),
+                  child: _selectedImage == null
+                      ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(CupertinoIcons.photo_camera, size: 50, color: CupertinoColors.secondaryLabel), SizedBox(height: 8), Text('أضف صورة')]))
+                      : ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(_selectedImage!.path), fit: BoxFit.cover)),
                 ),
-                const SizedBox(height: 24.0),
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(onPressed: _saveProduct, style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16.0)), child: const Text('حفظ المنتج')),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24.0),
+              CupertinoFormSection(
+                header: const Text('المعلومات الأساسية'),
+                children: [
+                  CupertinoTextFormFieldRow(controller: _nameController, prefix: const Text('الاسم'), placeholder: 'اسم المنتج', validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null),
+                  CupertinoTextFormFieldRow(controller: _descriptionController, prefix: const Text('الوصف'), placeholder: 'وصف المنتج', maxLines: 4, validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null),
+                  CupertinoTextFormFieldRow(controller: _priceController, prefix: const Text('السعر'), placeholder: 'سعر الوحدة', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty || double.tryParse(v) == null ? 'رقم صالح مطلوب' : null),
+                  CupertinoListTile(title: const Text('الفئة'), additionalInfo: Text(_selectedCategory ?? 'اختر'), trailing: const CupertinoListTileChevron(), onTap: () => _showPicker(context, options: _categories, onSelectedItemChanged: (val) => setState(() => _selectedCategory = val))),
+                ],
+              ),
+              CupertinoFormSection(
+                 header: const Text('معلومات الجملة'),
+                 children: [
+                    CupertinoTextFormFieldRow(controller: _stockQuantityController, prefix: const Text('الكمية'), placeholder: 'الكمية المتوفرة', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'رقم صالح مطلوب' : null),
+                    CupertinoTextFormFieldRow(controller: _minOrderQuantityController, prefix: const Text('أقل طلب'), placeholder: 'أقل كمية للطلب', keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty || int.tryParse(v) == null ? 'رقم صالح مطلوب' : null),
+                    CupertinoListTile(title: const Text('الوحدة'), additionalInfo: Text(_selectedUnitType ?? 'اختر'), trailing: const CupertinoListTileChevron(), onTap: () => _showPicker(context, options: _unitTypes, onSelectedItemChanged: (val) => setState(() => _selectedUnitType = val))),
+                 ],
+              ),
+              CupertinoFormSection(
+                header: const Text('مساهمة خيرية (اختياري)'),
+                children: [
+                  CupertinoListTile(
+                    title: const Text('التبرع بجزء من المنتج'),
+                    trailing: CupertinoSwitch(value: _isDonation, onChanged: (val) => setState(() => _isDonation = val)),
+                  ),
+                   if (_isDonation)
+                    CupertinoTextFormFieldRow(
+                      controller: _donationDescriptionController,
+                      prefix: const Text('الوصف'),
+                      placeholder: 'مثال: كرتونة لكل 10',
+                      validator: (v) => _isDonation && (v == null || v.isEmpty) ? 'مطلوب' : null,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              _isLoading
+                  ? const Center(child: CupertinoActivityIndicator())
+                  : CupertinoButton.filled(onPressed: _saveProduct, child: const Text('حفظ المنتج')),
+            ],
           ),
         ),
       ),

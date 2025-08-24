@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/message_model.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
@@ -41,6 +41,22 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  void _showErrorDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('خطأ'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('موافق'),
+            onPressed: () => Navigator.of(context).pop(),
+          )
+        ],
+      ),
+    );
+  }
+
   Future<void> _sendInitialMessage() async {
     if (widget.initialMessage == null || widget.initialMessage!.trim().isEmpty) {
       return;
@@ -60,9 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في إرسال الرسالة.'), backgroundColor: Theme.of(context).colorScheme.error),
-        );
+        _showErrorDialog('خطأ في إرسال الرسالة.');
       }
     }
   }
@@ -84,12 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('حدث خطأ أثناء جلب الاقتراح.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        _showErrorDialog('حدث خطأ أثناء جلب الاقتراح.');
       }
     } finally {
       if (mounted) {
@@ -103,95 +112,99 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUserId = supabase.auth.currentUser?.id;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('المحادثة'),
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('المحادثة'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _messagesStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('حدث خطأ: ${snapshot.error}'));
-                }
-                final messages = snapshot.data ?? [];
-                if (messages.isEmpty) {
-                  return const Center(child: Text('لا توجد رسائل بعد. ابدأ المحادثة!'));
-                }
+      child: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<List<Message>>(
+                stream: _messagesStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CupertinoActivityIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+                  }
+                  final messages = snapshot.data ?? [];
+                  if (messages.isEmpty) {
+                    return const Center(child: Text('لا توجد رسائل بعد. ابدأ المحادثة!'));
+                  }
 
-                return ListView.builder(
-                  reverse: true, // To show latest messages at the bottom
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMine = message.senderId == currentUserId;
-                    return Align(
-                      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Card(
-                        color: isMine ? Theme.of(context).colorScheme.primaryContainer : Colors.grey[300],
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        child: Padding(
+                  return ListView.builder(
+                    reverse: true, // To show latest messages at the bottom
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final isMine = message.senderId == currentUserId;
+                      return Align(
+                        alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          decoration: BoxDecoration(
+                             color: isMine ? CupertinoColors.activeBlue : CupertinoColors.systemGrey5,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                           padding: const EdgeInsets.all(12.0),
-                          child: Text(message.content),
+                          child: Text(
+                            message.content,
+                            style: TextStyle(
+                              color: isMine ? CupertinoColors.white : CupertinoColors.black,
+                            ),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-          _buildMessageInput(),
-        ],
+            _buildMessageInput(),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMessageInput() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: [
-            _isGeneratingSuggestion
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.0),
-                    child: SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2.0),
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.auto_awesome),
-                    onPressed: _getAiSuggestion,
-                    tooltip: 'اقتراح رسالة (AI)',
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          _isGeneratingSuggestion
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12.0),
+                  child: SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CupertinoActivityIndicator(),
                   ),
-            Expanded(
-              child: TextField(
-                controller: _messageController,
-                decoration: const InputDecoration(
-                  hintText: 'اكتب رسالتك...',
-                  border: OutlineInputBorder(),
+                )
+              : CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child: const Icon(CupertinoIcons.sparkles),
+                  onPressed: _getAiSuggestion,
                 ),
+          Expanded(
+            child: CupertinoTextField(
+              controller: _messageController,
+              placeholder: 'اكتب رسالتك...',
+               decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6,
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.send),
-              onPressed: _sendMessage,
-              style: IconButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            child: const Icon(CupertinoIcons.arrow_up_circle_fill),
+            onPressed: _sendMessage,
+          ),
+        ],
       ),
     );
   }
