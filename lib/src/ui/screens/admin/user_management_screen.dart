@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
+import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -106,7 +107,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         future: _usersFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CupertinoActivityIndicator());
+            return const CustomLoadingIndicator();
           }
           if (snapshot.hasError) {
             return Center(child: Text('خطأ في تحميل المستخدمين: ${snapshot.error}'));

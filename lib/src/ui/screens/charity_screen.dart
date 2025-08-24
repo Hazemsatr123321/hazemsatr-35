@@ -5,6 +5,7 @@ import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/charity_campaign_model.dart';
 import 'package:smart_iraq/src/models/donation_method_model.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 
 class CharityScreen extends StatefulWidget {
   const CharityScreen({super.key});
@@ -58,7 +59,7 @@ class _CharityScreenState extends State<CharityScreen> {
             future: _charityDataFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CupertinoActivityIndicator());
+                return const CustomLoadingIndicator();
               }
               if (snapshot.hasError) {
                 return Center(child: Text('حدث خطأ في تحميل البيانات: ${snapshot.error}'));

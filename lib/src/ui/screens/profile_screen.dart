@@ -10,6 +10,7 @@ import 'package:smart_iraq/src/ui/screens/reviews_list_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/providers/theme_provider.dart';
 import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
+import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -73,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return FutureBuilder<Profile>(
       future: _profileFuture,
       builder: (context, profileSnapshot) {
-        if (profileSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CupertinoActivityIndicator());
+        if (profileSnapshot.connectionState == ConnectionState.waiting) return const CustomLoadingIndicator();
         if (profileSnapshot.hasError || !profileSnapshot.hasData) return const Center(child: Text('لا يمكن تحميل الملف الشخصي.'));
 
         final profile = profileSnapshot.data!;
@@ -252,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
      return FutureBuilder<List<Product>>(
       future: _getProducts(isAdmin: isAdmin),
       builder: (context, productSnapshot) {
-        if (productSnapshot.connectionState == ConnectionState.waiting) return const SliverToBoxAdapter(child: Center(child: CupertinoActivityIndicator()));
+        if (productSnapshot.connectionState == ConnectionState.waiting) return const SliverToBoxAdapter(child: CustomLoadingIndicator());
         if (productSnapshot.hasError) return SliverToBoxAdapter(child: Center(child: Text('حدث خطأ: ${productSnapshot.error}')));
         if (!productSnapshot.hasData || productSnapshot.data!.isEmpty) return SliverToBoxAdapter(child: Center(child: Padding(padding: const EdgeInsets.all(32.0), child: Text(isAdmin ? 'لا توجد إعلانات.' : 'لم تقم بنشر أي إعلانات بعد.'))));
         final products = productSnapshot.data!;
