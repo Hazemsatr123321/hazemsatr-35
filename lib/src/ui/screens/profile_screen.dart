@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
@@ -9,7 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/providers/theme_provider.dart';
 import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
-import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart' as custom;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -289,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
-            return CupertinoListTile(
+            return custom.CupertinoListTile(
               title: const Text('الوضع الليلي'),
               subtitle: const Text('تفعيل المظهر الداكن للتطبيق'),
               leading: const Icon(CupertinoIcons.moon_stars),
@@ -324,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 'تقييم التاجر',
-                style: textTheme.body.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold),
               ),
               if (profile.rating_count > 0)
                 const Icon(CupertinoIcons.forward, size: 18, color: CupertinoColors.systemGrey)

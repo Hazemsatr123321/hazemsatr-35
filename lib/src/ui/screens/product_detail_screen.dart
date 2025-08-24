@@ -104,97 +104,101 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }
 
           final product = snapshot.data!;
+          final isMyProduct = product.userId == _supabase.auth.currentUser?.id;
 
-          return CustomScrollView(
-            slivers: [
-              CupertinoSliverNavigationBar(
-                largeTitle: Text(product.name),
-                stretch: true,
-                background: Hero(
-                  tag: 'product-image-${product.id}',
-                  child: product.imageUrl != null
-                  ? Image.network(
-                    product.imageUrl!,
-                    fit: BoxFit.cover,
-                    color: CupertinoColors.black.withOpacity(0.3),
-                    colorBlendMode: BlendMode.darken,
-                    errorBuilder: (context, error, stackTrace) => const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.systemGrey)),
-                  )
-                  : Container(color: CupertinoColors.systemGrey, child: const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.white))),
-                ),
-              ),
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  [
-                    Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildPriceChip(context, product),
-                          const SizedBox(height: 24.0),
-                          _buildSectionTitle(context, 'تفاصيل الجملة'),
-                          const SizedBox(height: 12.0),
-                          _buildB2BInfoGrid(context, product),
-                          const SizedBox(height: 24.0),
-                          _buildSectionTitle(context, 'الوصف'),
-                          const SizedBox(height: 12.0),
-                          Text(
-                            product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
-                            style: CupertinoTheme.of(context).textTheme.body.copyWith(height: 1.6, color: CupertinoColors.label),
-                          ),
-                        ].animate(interval: 100.ms).fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOut),
+          return Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  CupertinoSliverNavigationBar(
+                    largeTitle: Text(product.name),
+                    stretch: true,
+                    flexibleSpaceBar: FlexibleSpaceBar(
+                      background: Hero(
+                        tag: 'product-image-${product.id}',
+                        child: product.imageUrl != null
+                        ? Image.network(
+                          product.imageUrl!,
+                          fit: BoxFit.cover,
+                          color: CupertinoColors.black.withOpacity(0.3),
+                          colorBlendMode: BlendMode.darken,
+                          errorBuilder: (context, error, stackTrace) => const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.systemGrey)),
+                        )
+                        : Container(color: CupertinoColors.systemGrey, child: const Center(child: Icon(CupertinoIcons.photo, size: 100, color: CupertinoColors.white))),
                       ),
                     ),
-                  ]),
+                  ),
+                  SliverList(
+                    delegate: SliverChildListDelegate(
+                      [
+                        Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildPriceChip(context, product),
+                              const SizedBox(height: 24.0),
+                              _buildSectionTitle(context, 'تفاصيل الجملة'),
+                              const SizedBox(height: 12.0),
+                              _buildB2BInfoGrid(context, product),
+                              const SizedBox(height: 24.0),
+                              _buildSectionTitle(context, 'الوصف'),
+                              const SizedBox(height: 12.0),
+                              Text(
+                                product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
+                                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(height: 1.6, color: CupertinoColors.label),
+                              ),
+                              const SizedBox(height: 80), // Space for the bottom bar
+                            ].animate(interval: 100.ms).fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOut),
+                          ),
+                        ),
+                      ]),
+                  ),
+                ],
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: isMyProduct
+                      ? CupertinoButton.filled(
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.of(context).push(
+                              CupertinoPageRoute(builder: (context) => EditProductScreen(product: product))
+                            );
+                          },
+                          child: const Text('تعديل المنتج'),
+                        )
+                      : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          CupertinoButton.filled(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _startChat(product.userId, product.name);
+                            },
+                            child: const Text('مراسلة التاجر'),
+                          ),
+                          CupertinoButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                               Navigator.of(context).push(
+                                CupertinoPageRoute(builder: (context) => LeaveReviewScreen(revieweeId: product.userId)),
+                              );
+                            },
+                            child: const Text('أو أضف تقييمًا لهذا التاجر'),
+                          )
+                        ],
+                      ),
+                  ).animate().slideY(begin: 1, duration: 500.ms, delay: 300.ms, curve: Curves.easeOut),
+                ),
               ),
             ],
-          );
-        },
-      ),
-       bottomNavigationBar: FutureBuilder<Product>(
-        future: _productFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const SizedBox.shrink();
-           final product = snapshot.data!;
-           final isMyProduct = product.userId == _supabase.auth.currentUser?.id;
-
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: isMyProduct
-                ? CupertinoButton.filled(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.of(context).push(
-                        CupertinoPageRoute(builder: (context) => EditProductScreen(product: product))
-                      );
-                    },
-                    child: const Text('تعديل المنتج'),
-                  )
-                : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    CupertinoButton.filled(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _startChat(product.userId, product.name);
-                      },
-                      child: const Text('مراسلة التاجر'),
-                    ),
-                    CupertinoButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                         Navigator.of(context).push(
-                          CupertinoPageRoute(builder: (context) => LeaveReviewScreen(revieweeId: product.userId)),
-                        );
-                      },
-                      child: const Text('أو أضف تقييمًا لهذا التاجر'),
-                    )
-                  ],
-                ),
-            ).animate().slideY(begin: 1, duration: 500.ms, delay: 300.ms, curve: Curves.easeOut),
           );
         },
       ),
@@ -277,8 +281,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         children: [
           Icon(icon, color: theme.primaryColor, size: 28),
           const SizedBox(height: 8),
-          Text(label, style: theme.textTheme.footnote.copyWith(color: CupertinoColors.secondaryLabel.resolveFrom(context))),
-          Text(value, style: theme.textTheme.headline.copyWith(fontWeight: FontWeight.bold)),
+          Text(label, style: theme.textTheme.tabLabelTextStyle.copyWith(color: CupertinoColors.secondaryLabel.resolveFrom(context))),
+          Text(value, style: theme.textTheme.navLargeTitleTextStyle.copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
     );

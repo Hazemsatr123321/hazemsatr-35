@@ -91,11 +91,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final requestsFuture = _supabase.from('product_requests').select().eq('is_active', true);
     final managedAdsFuture = _supabase.from('managed_ads').select().eq('is_active', true);
 
-    final results = await Future.wait([productsFuture, requestsFuture, managedAdsFuture]);
+    final results = await Future.wait<dynamic>([productsFuture, requestsFuture, managedAdsFuture]);
 
-    final allProducts = (results[0] as List).map((p) => Product.fromJson(p)).toList();
-    final requests = (results[1] as List).map((r) => ProductRequest.fromJson(r)).toList();
-    final managedAds = (results[2] as List).map((ad) => ManagedAd.fromJson(ad)).toList();
+    final allProducts = results[0] as List<Product>;
+    final requestsData = results[1] as List;
+    final managedAdsData = results[2] as List;
+
+    final requests = requestsData.map((r) => ProductRequest.fromJson(r)).toList();
+    final managedAds = managedAdsData.map((ad) => ManagedAd.fromJson(ad)).toList();
 
     final featuredProducts = allProducts.where((p) => p.is_featured).toList();
     final regularProducts = allProducts.where((p) => !p.is_featured).toList();
