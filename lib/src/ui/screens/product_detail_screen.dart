@@ -223,16 +223,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildB2BInfoGrid(BuildContext context, Product product) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 2.5,
+    return Wrap(
+      spacing: 16.0,
+      runSpacing: 16.0,
       children: [
-        _buildInfoCard(context, Icons.inventory_2_outlined, 'الكمية المتوفرة', '${product.stock_quantity ?? 0}'),
-        _buildInfoCard(context, Icons.production_quantity_limits, 'أقل كمية للطلب', '${product.minimum_order_quantity ?? 1}'),
+        SizedBox(
+          width: (MediaQuery.of(context).size.width / 2) - 28, // Adjust for padding and spacing
+          child: _buildInfoCard(context, Icons.inventory_2_outlined, 'الكمية المتوفرة', '${product.stock_quantity ?? 0}')
+        ),
+        SizedBox(
+          width: (MediaQuery.of(context).size.width / 2) - 28,
+          child: _buildInfoCard(context, Icons.production_quantity_limits, 'أقل كمية للطلب', '${product.minimum_order_quantity ?? 1}')
+        ),
       ],
     );
   }

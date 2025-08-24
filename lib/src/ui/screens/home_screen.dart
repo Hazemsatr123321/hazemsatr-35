@@ -155,8 +155,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return GridView.builder(
                         padding: const EdgeInsets.all(12.0),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.75,
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 200, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.75,
                         ),
                         itemCount: 8,
                         itemBuilder: (context, index) => const ProductCardShimmer(),
@@ -170,8 +170,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       onRefresh: () async => _fetchData(),
                       child: GridView.builder(
                         padding: const EdgeInsets.all(12.0),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.75,
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 200, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.75,
                         ),
                         itemCount: feedItems.length,
                         itemBuilder: (context, index) {
