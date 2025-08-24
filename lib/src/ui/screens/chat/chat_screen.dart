@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/message_model.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -89,6 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _isGeneratingSuggestion = true;
     });
     try {
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
       final response = await supabase.functions.invoke(
         'generate-chat-suggestion',
         body: {'prompt': _messageController.text.trim()},
@@ -111,6 +112,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final supabase = Provider.of<SupabaseClient>(context, listen: false);
     final currentUserId = supabase.auth.currentUser?.id;
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(

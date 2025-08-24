@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/chat_room_model.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatRoomsScreen extends StatefulWidget {
   final ChatRepository chatRepository;
@@ -14,11 +15,19 @@ class ChatRoomsScreen extends StatefulWidget {
 
 class _ChatRoomsScreenState extends State<ChatRoomsScreen> {
   late final Future<List<ChatRoom>> _chatRoomsFuture;
-  final _userId = supabase.auth.currentUser?.id;
+  String? _userId;
 
   @override
   void initState() {
     super.initState();
+    // We can't use context in initState, so we get the user ID in didChangeDependencies
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final supabase = Provider.of<SupabaseClient>(context, listen: false);
+    _userId = supabase.auth.currentUser?.id;
     if (_userId != null) {
       _chatRoomsFuture = widget.chatRepository.getChatRooms();
     }

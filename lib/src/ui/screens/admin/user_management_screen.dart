@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -13,16 +14,23 @@ class UserManagementScreen extends StatefulWidget {
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
   late Future<List<Profile>> _usersFuture;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _usersFuture = _fetchUsers();
   }
 
   Future<List<Profile>> _fetchUsers() async {
     try {
-      final data = await supabase.from('profiles').select().order('created_at', ascending: false);
+      final data = await _supabase.from('profiles').select().order('created_at', ascending: false);
       return (data as List).map((json) => Profile.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error fetching users: $e');
@@ -38,7 +46,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Future<void> _updateUserStatus(String userId, String newStatus) async {
     try {
-      await supabase.from('profiles').update({'verification_status': newStatus}).eq('id', userId);
+      await _supabase.from('profiles').update({'verification_status': newStatus}).eq('id', userId);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('تم تحديث حالة المستخدم بنجاح.'), backgroundColor: Colors.green),
       );

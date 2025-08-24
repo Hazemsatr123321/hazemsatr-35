@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,19 +13,26 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late Future<List<Product>> _productsFuture;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _productsFuture = _fetchUserProducts();
   }
 
   Future<List<Product>> _fetchUserProducts() async {
-    final userId = supabase.auth.currentUser?.id;
+    final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
       throw 'User not logged in';
     }
-    final response = await supabase
+    final response = await _supabase
         .from('products')
         .select()
         .eq('user_id', userId);

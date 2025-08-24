@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/ui/screens/auth/auth_screen.dart';
 import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,6 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // while the Future is resolving.
     if (!mounted) return;
 
+    final supabase = Provider.of<SupabaseClient>(context, listen: false);
     final session = supabase.auth.currentSession;
     if (session == null) {
       Navigator.of(context).pushAndRemoveUntil(

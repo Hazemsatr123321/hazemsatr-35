@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/managed_ad_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddEditManagedAdScreen extends StatefulWidget {
   final ManagedAd? ad;
@@ -40,6 +41,7 @@ class _AddEditManagedAdScreenState extends State<AddEditManagedAdScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
+    final supabase = Provider.of<SupabaseClient>(context, listen: false);
     final data = {
       'title': _titleController.text.trim(),
       'image_url': _imageUrlController.text.trim(),

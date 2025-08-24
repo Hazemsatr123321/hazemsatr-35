@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PendingVerificationScreen extends StatelessWidget {
   const PendingVerificationScreen({super.key});
@@ -7,6 +8,8 @@ class PendingVerificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = CupertinoTheme.of(context).textTheme;
+    final supabase = Provider.of<SupabaseClient>(context, listen: false);
+
     return CupertinoPageScaffold(
       child: Center(
         child: Padding(

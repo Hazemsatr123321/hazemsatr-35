@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/managed_ad_model.dart';
 import 'package:smart_iraq/src/ui/screens/admin/add_edit_managed_ad_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ManagedAdsManagementScreen extends StatefulWidget {
   const ManagedAdsManagementScreen({super.key});
@@ -12,16 +13,23 @@ class ManagedAdsManagementScreen extends StatefulWidget {
 
 class _ManagedAdsManagementScreenState extends State<ManagedAdsManagementScreen> {
   late Future<List<ManagedAd>> _adsFuture;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _adsFuture = _fetchAds();
   }
 
   Future<List<ManagedAd>> _fetchAds() async {
     try {
-      final data = await supabase.from('managed_ads').select().order('created_at', ascending: false);
+      final data = await _supabase.from('managed_ads').select().order('created_at', ascending: false);
       return (data as List).map((json) => ManagedAd.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error fetching managed ads: $e');
@@ -71,7 +79,7 @@ class _ManagedAdsManagementScreenState extends State<ManagedAdsManagementScreen>
     );
     if (shouldDelete == true) {
       try {
-        await supabase.from('managed_ads').delete().eq('id', adId);
+        await _supabase.from('managed_ads').delete().eq('id', adId);
         _refreshAds();
       } catch(e) {
         if (mounted) {

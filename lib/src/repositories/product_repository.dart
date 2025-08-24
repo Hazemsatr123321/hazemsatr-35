@@ -1,5 +1,5 @@
-import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class ProductRepository {
   Future<List<Product>> getProducts({
@@ -10,6 +10,10 @@ abstract class ProductRepository {
 }
 
 class SupabaseProductRepository implements ProductRepository {
+  final SupabaseClient _supabase;
+
+  SupabaseProductRepository(this._supabase);
+
   @override
   Future<List<Product>> getProducts({
     String? query,
@@ -17,7 +21,7 @@ class SupabaseProductRepository implements ProductRepository {
     bool? sortAscending,
   }) async {
     try {
-      dynamic request = supabase.from('products').select();
+      dynamic request = _supabase.from('products').select();
 
       if (query != null && query.isNotEmpty) {
         request = request.ilike('title', '%$query%');

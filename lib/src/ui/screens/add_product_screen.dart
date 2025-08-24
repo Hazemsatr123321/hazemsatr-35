@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // Using Material Form for validation
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart';
-import 'package:smart_iraq/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -76,6 +76,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
       final imageFile = File(_selectedImage!.path);
       final imageExtension = _selectedImage!.path.split('.').last.toLowerCase();
       final userId = supabase.auth.currentUser!.id;

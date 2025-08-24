@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart'; // For supabase client
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CreateRequestScreen extends StatefulWidget {
   const CreateRequestScreen({super.key});
@@ -33,6 +34,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
       await supabase.from('product_requests').insert({
         'retailer_id': supabase.auth.currentUser!.id,
         'requested_product_name': _productNameController.text.trim(),

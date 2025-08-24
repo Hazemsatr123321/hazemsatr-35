@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/donation_method_model.dart';
 import 'package:smart_iraq/src/ui/screens/admin/add_edit_donation_method_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DonationMethodsManagementScreen extends StatefulWidget {
   const DonationMethodsManagementScreen({super.key});
@@ -13,16 +14,23 @@ class DonationMethodsManagementScreen extends StatefulWidget {
 
 class _DonationMethodsManagementScreenState extends State<DonationMethodsManagementScreen> {
   late Future<List<DonationMethod>> _methodsFuture;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _methodsFuture = _fetchMethods();
   }
 
   Future<List<DonationMethod>> _fetchMethods() async {
     try {
-      final data = await supabase.from('donation_methods').select().order('created_at', ascending: false);
+      final data = await _supabase.from('donation_methods').select().order('created_at', ascending: false);
       return (data as List).map((json) => DonationMethod.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error fetching donation methods: $e');
@@ -56,7 +64,7 @@ class _DonationMethodsManagementScreenState extends State<DonationMethodsManagem
     );
     if (shouldDelete == true) {
       try {
-        await supabase.from('donation_methods').delete().eq('id', methodId);
+        await _supabase.from('donation_methods').delete().eq('id', methodId);
         _refreshMethods();
       } catch(e) {
         if (mounted) {

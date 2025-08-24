@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/donation_method_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddEditDonationMethodScreen extends StatefulWidget {
   final DonationMethod? method;
@@ -40,6 +41,7 @@ class _AddEditDonationMethodScreenState extends State<AddEditDonationMethodScree
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
+    final supabase = Provider.of<SupabaseClient>(context, listen: false);
     final data = {
       'method_name': _nameController.text.trim(),
       'account_details': _detailsController.text.trim(),

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/ui/screens/auth/pending_verification_screen.dart';
@@ -47,6 +47,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!_loginFormKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
       final response = await supabase.auth.signInWithPassword(
         email: _loginEmailController.text.trim(),
         password: _loginPasswordController.text.trim(),
@@ -74,6 +75,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!_signupFormKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
       await supabase.auth.signUp(
         email: _signupEmailController.text.trim(),
         password: _signupPasswordController.text.trim(),

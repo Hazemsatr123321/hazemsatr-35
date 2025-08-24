@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FeatureManagementScreen extends StatefulWidget {
   const FeatureManagementScreen({super.key});
@@ -12,16 +13,23 @@ class FeatureManagementScreen extends StatefulWidget {
 
 class _FeatureManagementScreenState extends State<FeatureManagementScreen> {
   late Future<List<Product>> _productsFuture;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _productsFuture = _fetchProducts();
   }
 
   Future<List<Product>> _fetchProducts() async {
     try {
-      final data = await supabase.from('products').select().order('created_at', ascending: false);
+      final data = await _supabase.from('products').select().order('created_at', ascending: false);
       return (data as List).map((json) => Product.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error fetching products for admin: $e');
@@ -37,7 +45,7 @@ class _FeatureManagementScreenState extends State<FeatureManagementScreen> {
 
   Future<void> _updateFeatureStatus(String productId, bool newStatus) async {
     try {
-      await supabase.from('products').update({'is_featured': newStatus}).eq('id', productId);
+      await _supabase.from('products').update({'is_featured': newStatus}).eq('id', productId);
       // No need for a snackbar here to keep the UI clean, the switch provides immediate feedback.
       // We will refetch to ensure the state is consistent.
       _refreshProducts();
