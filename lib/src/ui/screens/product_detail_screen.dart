@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:smart_iraq/main.dart'; // For supabase client
+import 'package:smart_iraq/main.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:smart_iraq/src/repositories/chat_repository.dart';
+import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
 import 'package:smart_iraq/src/ui/screens/leave_review_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late final Future<Product> _productFuture;
+  final ChatRepository _chatRepository = SupabaseChatRepository();
 
   @override
   void initState() {
@@ -34,6 +37,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       return Product.fromJson(data);
     } catch (error) {
       rethrow;
+    }
+  }
+
+  Future<void> _startChat(String sellerId, String productName) async {
+    try {
+      final roomId = await _chatRepository.findOrCreateChatRoom(sellerId);
+      if (mounted) {
+        Navigator.of(context).push(
+          CupertinoPageRoute(
+            builder: (context) => ChatScreen(
+              roomId: roomId,
+              chatRepository: _chatRepository,
+              initialMessage: 'مرحباً، أستفسر بخصوص منتج: $productName',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('حدث خطأ أثناء بدء المحادثة.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -144,10 +173,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ElevatedButton.icon(
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        // TODO: Navigate to Create Order Screen
+                        _startChat(product.userId, product.name);
                       },
-                      icon: const Icon(Icons.shopping_cart_checkout_rounded),
-                      label: const Text('إنشاء طلب شراء'),
+                      icon: const Icon(CupertinoIcons.chat_bubble_2_fill),
+                      label: const Text('مراسلة التاجر'),
                        style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

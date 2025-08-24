@@ -8,10 +8,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ChatScreen extends StatefulWidget {
   final String roomId;
   final ChatRepository chatRepository;
+  final String? initialMessage;
+
   const ChatScreen({
     super.key,
     required this.roomId,
     required this.chatRepository,
+    this.initialMessage,
   });
 
   @override
@@ -27,6 +30,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _messagesStream = widget.chatRepository.getMessagesStream(widget.roomId);
+    if (widget.initialMessage != null) {
+      _sendInitialMessage();
+    }
   }
 
   @override
@@ -35,12 +41,29 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  Future<void> _sendMessage() async {
+  Future<void> _sendInitialMessage() async {
+    if (widget.initialMessage == null || widget.initialMessage!.trim().isEmpty) {
+      return;
+    }
     try {
-      await widget.chatRepository.sendMessage(widget.roomId, _messageController.text);
+      await widget.chatRepository.sendMessage(widget.roomId, widget.initialMessage!);
+    } catch (error) {
+      // Handle error silently for initial message
+      debugPrint('Error sending initial message: $error');
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+    try {
+      await widget.chatRepository.sendMessage(widget.roomId, _messageController.text.trim());
       _messageController.clear();
     } catch (error) {
-      // In a real app, show an error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في إرسال الرسالة.'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
+      }
     }
   }
 
