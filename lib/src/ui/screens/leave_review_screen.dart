@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LeaveReviewScreen extends StatefulWidget {
   final String revieweeId;
@@ -31,6 +32,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
       final reviewerId = supabase.auth.currentUser!.id;
       await supabase.from('reviews').insert({
         'reviewer_id': reviewerId,

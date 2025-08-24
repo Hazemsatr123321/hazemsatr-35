@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/ui/screens/charity_screen.dart';
 import 'package:smart_iraq/src/ui/screens/home_screen.dart';
@@ -36,7 +37,7 @@ class MainNavigationScreen extends StatelessWidget {
         switch (index) {
           case 0:
             return CupertinoTabView(builder: (context) {
-              return HomeScreen(productRepository: SupabaseProductRepository());
+              return HomeScreen(productRepository: context.read<ProductRepository>());
             });
           case 1:
             return CupertinoTabView(builder: (context) {
@@ -52,7 +53,7 @@ class MainNavigationScreen extends StatelessWidget {
             });
           default:
              return CupertinoTabView(builder: (context) {
-              return HomeScreen(productRepository: SupabaseProductRepository());
+              return HomeScreen(productRepository: context.read<ProductRepository>());
             });
         }
       },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // A simple data model for a chat message.
@@ -51,7 +52,8 @@ class _SmartAssistantScreenState extends State<SmartAssistantScreen> {
     });
 
     try {
-      final response = await Supabase.instance.client.functions.invoke(
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
+      final response = await supabase.functions.invoke(
         'smart-assistant',
         body: {'prompt': userMessage},
       );

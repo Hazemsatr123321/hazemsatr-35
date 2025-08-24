@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart'; // For supabase client
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/models/managed_ad_model.dart';
 import 'package:smart_iraq/src/models/product_request_model.dart';
@@ -15,6 +15,7 @@ import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/screens/create_request_screen.dart';
 import 'dart:math';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Note: The AppBars and FABs are now handled by MainNavigationScreen.
 // This screen is now just the body content.
@@ -38,10 +39,17 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBanner? _banner;
   bool _isBannerLoading = true;
   Profile? _profile;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _fetchData();
     _fetchBanner();
     if (!widget.isGuest) {
@@ -51,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchBanner() async {
     try {
-      final data = await supabase.from('app_banners').select().eq('is_active', true).limit(1);
+      final data = await _supabase.from('app_banners').select().eq('is_active', true).limit(1);
       if (mounted && data.isNotEmpty) {
         setState(() => _banner = AppBanner.fromJson(data.first));
       }
@@ -64,8 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchProfile() async {
     try {
-      final userId = supabase.auth.currentUser!.id;
-      final data = await supabase.from('profiles').select().eq('id', userId).single();
+      final userId = _supabase.auth.currentUser!.id;
+      final data = await _supabase.from('profiles').select().eq('id', userId).single();
       if (mounted) setState(() => _profile = Profile.fromJson(data));
     } catch (e) {
       debugPrint('Could not fetch profile: $e');
@@ -80,8 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<dynamic>> _getCombinedFeed() async {
     final productsFuture = widget.productRepository.getProducts();
-    final requestsFuture = supabase.from('product_requests').select().eq('is_active', true);
-    final managedAdsFuture = supabase.from('managed_ads').select().eq('is_active', true);
+    final requestsFuture = _supabase.from('product_requests').select().eq('is_active', true);
+    final managedAdsFuture = _supabase.from('managed_ads').select().eq('is_active', true);
 
     final results = await Future.wait([productsFuture, requestsFuture, managedAdsFuture]);
 

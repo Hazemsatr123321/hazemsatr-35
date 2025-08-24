@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
@@ -12,6 +11,7 @@ import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -22,11 +22,19 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<Profile> _profileFuture;
-  final _user = supabase.auth.currentUser;
+  User? _user;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
+    _user = _supabase.auth.currentUser;
     _refreshAllData();
   }
 
@@ -39,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<Profile> _getProfile() async {
     if (_user == null) throw 'User not logged in';
     try {
-      final data = await supabase.from('profiles').select().eq('id', _user!.id).single();
+      final data = await _supabase.from('profiles').select().eq('id', _user!.id).single();
       return Profile.fromJson(data);
     } catch (e) {
       rethrow;
@@ -49,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<List<Product>> _getProducts({required bool isAdmin}) async {
     if (_user == null) return [];
     try {
-      var query = supabase.from('products').select();
+      var query = _supabase.from('products').select();
       if (!isAdmin) {
         query = query.eq('user_id', _user!.id);
       }
@@ -61,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _deleteProduct(Product product) async {
     final shouldDelete = await showCupertinoDialog<bool>(context: context, builder: (c) => CupertinoAlertDialog(title: const Text('تأكيد الحذف'), content: const Text('هل أنت متأكد من رغبتك في حذف هذا الإعلان نهائياً؟'), actions: [CupertinoDialogAction(onPressed:()=>Navigator.of(c).pop(false), child: const Text('إلغاء')), CupertinoDialogAction(onPressed:()=>Navigator.of(c).pop(true), isDestructiveAction: true, child: const Text('حذف'))]));
     if(shouldDelete == true) {
-      await supabase.from('products').delete().eq('id', product.id);
+      await _supabase.from('products').delete().eq('id', product.id);
       _refreshAllData();
     }
   }
@@ -88,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 child: const Icon(CupertinoIcons.square_arrow_right),
-                onPressed: () => supabase.auth.signOut(),
+                onPressed: () => _supabase.auth.signOut(),
               )
             ),
             SliverToBoxAdapter(child: _buildBusinessInfoSection(profile)),

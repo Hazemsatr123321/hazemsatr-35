@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
-import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -62,6 +62,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final supabase = Provider.of<SupabaseClient>(context, listen: false);
       await supabase.from('products').update({
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),

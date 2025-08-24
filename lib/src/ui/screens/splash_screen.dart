@@ -21,34 +21,67 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // Wait for the animation to be visually pleasing
     await Future.delayed(const Duration(milliseconds: 2500));
-
-    // This check is needed because the widget might be disposed
-    // while the Future is resolving.
     if (!mounted) return;
 
     final supabase = Provider.of<SupabaseClient>(context, listen: false);
     final session = supabase.auth.currentSession;
+
     if (session == null) {
+      _navigateToAuth();
+      return;
+    }
+
+    try {
+      final profile = await supabase
+          .from('profiles')
+          .select('verification_status')
+          .eq('id', session.user.id)
+          .single();
+
+      if (!mounted) return;
+
+      if (profile['verification_status'] == 'approved') {
+        _navigateToHome();
+      } else {
+        // Handle unapproved or rejected users
+        await supabase.auth.signOut();
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('حسابك لم يتم توثيقه بعد أو تم رفضه. الرجاء مراجعة الإدارة.'),
+          backgroundColor: Colors.orange,
+        ));
+        _navigateToAuth();
+      }
+    } catch (e) {
+      // Handle cases where profile doesn't exist or other errors
+      if (!mounted) return;
+      await supabase.auth.signOut();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('حدث خطأ أثناء التحقق من حسابك. الرجاء تسجيل الدخول مرة أخرى.'),
+        backgroundColor: Colors.red,
+      ));
+      _navigateToAuth();
+    }
+  }
+
+  void _navigateToAuth() {
+    if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const AuthScreen()),
         (route) => false,
       );
-    } else {
-      // Also check if user profile is approved
-      final profile = await supabase.from('profiles').select('verification_status').eq('id', session.user.id).single();
-      if (profile['verification_status'] != 'approved') {
-        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false);
-         // Optionally, sign them out and show a message
-        await supabase.auth.signOut();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('حسابك لم يتم توثيقه بعد أو تم رفضه. الرجاء مراجعة الإدارة.'), backgroundColor: Colors.orange,));
-      } else {
-         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-          (route) => false,
-        );
-      }
+    }
+  }
+
+  void _navigateToHome() {
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+        (route) => false,
+      );
     }
   }
 

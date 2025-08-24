@@ -1,12 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/leave_review_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -19,17 +20,25 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late final Future<Product> _productFuture;
-  final ChatRepository _chatRepository = SupabaseChatRepository();
+  late SupabaseClient _supabase;
+  late ChatRepository _chatRepository;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
+    _chatRepository = Provider.of<ChatRepository>(context, listen: false);
     _productFuture = _getProduct();
   }
 
   Future<Product> _getProduct() async {
     try {
-      final data = await supabase
+      final data = await _supabase
           .from('products')
           .select()
           .eq('id', widget.productId)
@@ -148,7 +157,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const SizedBox.shrink();
            final product = snapshot.data!;
-           final isMyProduct = product.userId == supabase.auth.currentUser?.id;
+           final isMyProduct = product.userId == _supabase.auth.currentUser?.id;
 
           return SafeArea(
             child: Padding(

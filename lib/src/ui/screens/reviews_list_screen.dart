@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/review_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ReviewsListScreen extends StatefulWidget {
   final String revieweeId;
@@ -13,16 +14,23 @@ class ReviewsListScreen extends StatefulWidget {
 
 class _ReviewsListScreenState extends State<ReviewsListScreen> {
   late Future<List<Review>> _reviewsFuture;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _reviewsFuture = _fetchReviews();
   }
 
   Future<List<Review>> _fetchReviews() async {
     try {
-      final data = await supabase
+      final data = await _supabase
           .from('reviews')
           .select('*, profiles(business_name, username)')
           .eq('reviewee_id', widget.revieweeId)

@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:smart_iraq/main.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/charity_campaign_model.dart';
 import 'package:smart_iraq/src/models/donation_method_model.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CharityScreen extends StatefulWidget {
   const CharityScreen({super.key});
@@ -16,18 +17,25 @@ class CharityScreen extends StatefulWidget {
 
 class _CharityScreenState extends State<CharityScreen> {
   Future<Map<String, List<dynamic>>>? _charityDataFuture;
+  late SupabaseClient _supabase;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _supabase = Provider.of<SupabaseClient>(context, listen: false);
     _charityDataFuture = _fetchCharityData();
   }
 
   Future<Map<String, List<dynamic>>> _fetchCharityData() async {
     try {
-      final campaignsFuture = supabase.from('charity_campaigns').select().eq('is_active', true);
-      final methodsFuture = supabase.from('donation_methods').select().eq('is_active', true);
-      final donationsFuture = supabase.from('products').select().eq('is_available_for_donation', true);
+      final campaignsFuture = _supabase.from('charity_campaigns').select().eq('is_active', true);
+      final methodsFuture = _supabase.from('donation_methods').select().eq('is_active', true);
+      final donationsFuture = _supabase.from('products').select().eq('is_available_for_donation', true);
 
       final results = await Future.wait([campaignsFuture, methodsFuture, donationsFuture]);
 
