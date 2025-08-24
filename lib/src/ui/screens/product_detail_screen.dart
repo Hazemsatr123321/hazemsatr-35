@@ -1,8 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:smart_iraq/main.dart'; // For supabase client
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:smart_iraq/src/ui/screens/leave_review_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -53,7 +55,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           }
 
           final product = snapshot.data!;
-          final isMyProduct = product.userId == supabase.auth.currentUser?.id;
 
           return CustomScrollView(
             slivers: [
@@ -116,7 +117,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         future: _productFuture,
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const SizedBox.shrink();
-           final isMyProduct = snapshot.data!.userId == supabase.auth.currentUser?.id;
+           final product = snapshot.data!;
+           final isMyProduct = product.userId == supabase.auth.currentUser?.id;
 
           return SafeArea(
             child: Padding(
@@ -125,7 +127,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ? ElevatedButton.icon(
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      /* TODO: Navigate to Edit Product Screen */
+                      // TODO: Navigate to Edit Product Screen
                     },
                     icon: const Icon(Icons.edit),
                     label: const Text('تعديل المنتج'),
@@ -135,18 +137,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       backgroundColor: Theme.of(context).colorScheme.secondary
                     ),
                   )
-                : ElevatedButton.icon(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      /* TODO: Navigate to Create Order Screen */
-                    },
-                    icon: const Icon(Icons.shopping_cart_checkout_rounded),
-                    label: const Text('إنشاء طلب شراء'),
-                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        // TODO: Navigate to Create Order Screen
+                      },
+                      icon: const Icon(Icons.shopping_cart_checkout_rounded),
+                      label: const Text('إنشاء طلب شراء'),
+                       style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
+                    TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                         Navigator.of(context).push(
+                          CupertinoPageRoute(builder: (context) => LeaveReviewScreen(revieweeId: product.userId)),
+                        );
+                      },
+                      child: const Text('أو أضف تقييمًا لهذا التاجر'),
+                    )
+                  ],
+                ),
             ).animate().slideY(begin: 1, duration: 500.ms, delay: 300.ms, curve: Curves.easeOut),
           );
         },

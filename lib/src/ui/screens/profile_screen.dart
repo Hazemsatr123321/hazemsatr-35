@@ -6,6 +6,7 @@ import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
+import 'package:smart_iraq/src/ui/screens/reviews_list_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/providers/theme_provider.dart';
 import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
@@ -152,6 +153,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(verificationText, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: verificationColor)),
                 ],
               ),
+            const Divider(height: 24),
+            _buildRatingSection(profile),
             ],
           ),
         ),
@@ -289,5 +292,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
            ),
        ),
      );
+  }
+
+  Widget _buildRatingSection(Profile profile) {
+    return GestureDetector(
+      onTap: () {
+        if (profile.rating_count > 0) {
+          Navigator.of(context).push(
+            CupertinoPageRoute(builder: (context) => ReviewsListScreen(revieweeId: profile.id)),
+          );
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'تقييم التاجر',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              if (profile.rating_count > 0)
+                const Icon(CupertinoIcons.forward, size: 18, color: Colors.grey)
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildStarRating(profile.average_rating),
+              const SizedBox(width: 8),
+              Text(
+                '${profile.average_rating.toStringAsFixed(1)} (${profile.rating_count} تقييم)',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStarRating(double rating) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        IconData icon;
+        if (index >= rating) {
+          icon = CupertinoIcons.star;
+        } else if (index > rating - 1 && index < rating) {
+          icon = CupertinoIcons.star_lefthalf_fill;
+        } else {
+          icon = CupertinoIcons.star_fill;
+        }
+        return Icon(icon, color: Colors.amber, size: 20);
+      }),
+    );
   }
 }
