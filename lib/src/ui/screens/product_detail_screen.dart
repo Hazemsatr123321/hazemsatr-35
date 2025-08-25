@@ -2,12 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/ui/screens/chat/chat_screen.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/leave_review_screen.dart';
+import 'package:smart_iraq/src/ui/screens/profile/seller_profile_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:smart_iraq/src/core/theme/app_theme.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -24,11 +27,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late ChatRepository _chatRepository;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _supabase = Provider.of<SupabaseClient>(context, listen: false);
@@ -40,7 +38,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     try {
       final data = await _supabase
           .from('products')
-          .select()
+          .select('*, profiles(*)') // Join with profiles table
           .eq('id', widget.productId)
           .single();
       return Product.fromJson(data);
@@ -55,12 +53,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       builder: (context) => CupertinoAlertDialog(
         title: const Text('خطأ'),
         content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('موافق'),
-            onPressed: () => Navigator.of(context).pop(),
-          )
-        ],
+        actions: [CupertinoDialogAction(onPressed: () => Navigator.of(context).pop(), child: const Text('موافق'))],
       ),
     );
   }
@@ -80,9 +73,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         );
       }
     } catch (error) {
-       if (mounted) {
-        _showErrorDialog('حدث خطأ أثناء بدء المحادثة.');
-      }
+       if (mounted) _showErrorDialog('حدث خطأ أثناء بدء المحادثة.');
     }
   }
 
@@ -117,76 +108,209 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   SliverList(
                     delegate: SliverChildListDelegate(
                       [
+                        if (product.imageUrl != null) Image.network(product.imageUrl!),
                         Padding(
                           padding: const EdgeInsets.all(20.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildPriceChip(context, product),
+                              if (product.seller != null) _buildSellerInfo(product.seller!),
                               const SizedBox(height: 24.0),
-                              _buildSectionTitle(context, 'تفاصيل الجملة'),
-                              const SizedBox(height: 12.0),
-                              _buildB2BInfoGrid(context, product),
+                              _buildPriceChip(context, product),
                               const SizedBox(height: 24.0),
                               _buildSectionTitle(context, 'الوصف'),
                               const SizedBox(height: 12.0),
                               Text(
                                 product.description ?? 'لا يوجد وصف متاح لهذا المنتج.',
-                                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(height: 1.6, color: CupertinoColors.label),
+                                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(height: 1.6),
                               ),
-                              const SizedBox(height: 80), // Space for the bottom bar
-                            ].animate(interval: 100.ms).fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOut),
+                              const SizedBox(height: 80),
+                            ].animate(interval: 100.ms).fadeIn(duration: 400.ms).slideY(begin: 0.1),
                           ),
                         ),
-                      ]),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: isMyProduct
-                      ? CupertinoButton.filled(
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            Navigator.of(context).push(
-                              CupertinoPageRoute(builder: (context) => EditProductScreen(product: product))
-                            );
-                          },
-                          child: const Text('تعديل المنتج'),
-                        )
-                      : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          CupertinoButton.filled(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              _startChat(product.userId, product.name);
-                            },
-                            child: const Text('مراسلة التاجر'),
-                          ),
-                          CupertinoButton(
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                               Navigator.of(context).push(
-                                CupertinoPageRoute(builder: (context) => LeaveReviewScreen(revieweeId: product.userId)),
-                              );
-                            },
-                            child: const Text('أو أضف تقييمًا لهذا التاجر'),
-                          )
-                        ],
-                      ),
-                  ).animate().slideY(begin: 1, duration: 500.ms, delay: 300.ms, curve: Curves.easeOut),
-                ),
-              ),
+              _buildBottomActionBar(product, isMyProduct),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSellerInfo(Profile seller) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        CupertinoPageRoute(builder: (context) => SellerProfileScreen(sellerId: seller.id)),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            const Icon(CupertinoIcons.person_alt_circle, size: 40, color: AppTheme.secondaryTextColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(seller.business_name ?? 'بائع غير معروف', style: CupertinoTheme.of(context).textTheme.navTitleTextStyle),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildReputationBadge(seller.seller_tier),
+                      const SizedBox(width: 8),
+                      _buildStarRating(seller.reputation_score ?? 0),
+                      const SizedBox(width: 4),
+                      Text(
+                        (seller.reputation_score ?? 0).toStringAsFixed(1),
+                        style: const TextStyle(color: AppTheme.lightTextColor, fontWeight: FontWeight.bold),
+                      ),
+                       const Icon(CupertinoIcons.forward, size: 16, color: AppTheme.secondaryTextColor),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStarRating(double rating) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        IconData icon;
+        if (index >= rating) {
+          icon = CupertinoIcons.star;
+        } else if (index > rating - 1 && index < rating) {
+          icon = CupertinoIcons.star_lefthalf_fill;
+        } else {
+          icon = CupertinoIcons.star_fill;
+        }
+        return Icon(icon, color: AppTheme.goldAccent, size: 16);
+      }),
+    );
+  }
+
+  Widget _buildReputationBadge(String? tier) {
+    IconData icon;
+    Color color;
+    String text = tier ?? 'New Seller';
+
+    // Match the tiers defined in the Edge Function
+    switch (text) {
+      case 'Power Seller':
+        icon = CupertinoIcons.checkmark_seal_fill;
+        color = AppTheme.goldAccent;
+        break;
+      case 'Top Seller':
+        icon = CupertinoIcons.star_circle_fill;
+        color = CupertinoColors.systemGreen;
+        break;
+      case 'Rising Star':
+        icon = CupertinoIcons.flame_fill;
+        color = CupertinoColors.systemOrange;
+        break;
+      default: // New Seller
+        icon = CupertinoIcons.person_badge_plus;
+        color = AppTheme.secondaryTextColor;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 12),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _buyNow(Product product) async {
+    final buyerId = _supabase.auth.currentUser?.id;
+    if (buyerId == null) {
+      _showErrorDialog('You must be logged in to purchase an item.');
+      return;
+    }
+
+    try {
+      // We need the buyer's profile ID, not auth user ID.
+      // This assumes the profile id is the same as the user id, which should be the case.
+      await _supabase.from('purchases').insert({
+        'product_id': product.id,
+        'buyer_id': buyerId,
+        'seller_id': product.userId,
+      });
+
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('تم الشراء بنجاح'),
+            content: const Text('تم تسجيل عملية الشراء. يمكنك الآن ترك تقييم للبائع من صفحة مشترياتك.'),
+            actions: [CupertinoDialogAction(onPressed: () => Navigator.of(context).pop(), child: const Text('موافق'))],
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        // Handle specific error for unique constraint violation
+        if (error.toString().contains('duplicate key value violates unique constraint')) {
+          _showErrorDialog('لقد قمت بشراء هذا المنتج بالفعل.');
+        } else {
+          _showErrorDialog('حدث خطأ أثناء عملية الشراء: ${error.toString()}');
+        }
+      }
+    }
+  }
+
+  Widget _buildBottomActionBar(Product product, bool isMyProduct) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: isMyProduct
+              ? CupertinoButton.filled(
+                  onPressed: () => Navigator.of(context).push(CupertinoPageRoute(builder: (context) => EditProductScreen(product: product))),
+                  child: const Text('تعديل المنتج'),
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: CupertinoButton(
+                        onPressed: () => _startChat(product.userId, product.name),
+                        color: AppTheme.darkSurface,
+                        child: const Text('مراسلة التاجر', style: TextStyle(color: AppTheme.lightTextColor)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: CupertinoButton.filled(
+                        onPressed: () => _buyNow(product),
+                        child: const Text('شراء الآن'),
+                      ),
+                    ),
+                  ],
+                ),
+        ).animate().slideY(begin: 1, duration: 500.ms, delay: 300.ms, curve: Curves.easeOut),
       ),
     );
   }
@@ -199,19 +323,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         color: theme.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-           Icon(CupertinoIcons.tag_solid, color: theme.primaryColor),
-           const SizedBox(width: 8),
-           Text(
-            '${product.price} د.ع / ${product.unit_type ?? 'وحدة'}',
-            style: theme.textTheme.textStyle.copyWith(
-              color: theme.primaryColor,
-              fontWeight: FontWeight.bold
-            ),
-          ),
-        ],
+      child: Text(
+        '${product.price} د.ع / ${product.unit_type ?? 'وحدة'}',
+        style: theme.textTheme.textStyle.copyWith(color: theme.primaryColor, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -220,57 +334,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Text(
       title,
       style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontWeight: FontWeight.bold),
-    );
-  }
-
-  Widget _buildB2BInfoGrid(BuildContext context, Product product) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final itemWidth = (constraints.maxWidth / 2) - 8;
-        return Wrap(
-          spacing: 16.0,
-          runSpacing: 16.0,
-          children: [
-            SizedBox(
-              width: itemWidth,
-              child: _buildInfoCard(context, CupertinoIcons.cube_box, 'الكمية المتوفرة', '${product.stock_quantity ?? 0}')
-            ),
-            SizedBox(
-              width: itemWidth,
-              child: _buildInfoCard(context, CupertinoIcons.shopping_cart, 'أقل كمية للطلب', '${product.minimum_order_quantity ?? 1}')
-            ),
-          ],
-        );
-      }
-    );
-  }
-
-  Widget _buildInfoCard(BuildContext context, IconData icon, String label, String value) {
-    final theme = CupertinoTheme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: CupertinoColors.systemBackground.resolveFrom(context),
-        border: Border.all(color: CupertinoColors.systemGrey5.resolveFrom(context)),
-        boxShadow: [
-          BoxShadow(
-            color: CupertinoColors.systemGrey.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4)
-          )
-        ]
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: theme.primaryColor, size: 28),
-          const SizedBox(height: 8),
-          Text(label, style: theme.textTheme.tabLabelTextStyle.copyWith(color: CupertinoColors.secondaryLabel.resolveFrom(context))),
-          Text(value, style: theme.textTheme.navLargeTitleTextStyle.copyWith(fontWeight: FontWeight.bold)),
-        ],
-      ),
     );
   }
 }

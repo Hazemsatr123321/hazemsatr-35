@@ -7,6 +7,7 @@ import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
 import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
+import 'package:smart_iraq/src/ui/screens/profile/my_purchases_screen.dart';
 import 'package:smart_iraq/src/ui/screens/reviews_list_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
@@ -21,6 +22,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<Profile> _profileFuture;
+  late Future<int> _reviewCountFuture;
   User? _user;
   late SupabaseClient _supabase;
 
@@ -35,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _refreshAllData() {
     setState(() {
       _profileFuture = _getProfile();
+      _reviewCountFuture = _getReviewCount();
     });
   }
 
@@ -45,6 +48,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Profile.fromJson(data);
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<int> _getReviewCount() async {
+    if (_user == null) return 0;
+    try {
+      final response = await _supabase
+          .from('reviews')
+          .select('id', const FetchOptions(count: CountOption.exact))
+          .eq('seller_id', _user!.id);
+      return response.count;
+    } catch (e) {
+      return 0;
     }
   }
 
@@ -110,6 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               SliverToBoxAdapter(child: _buildBusinessInfoSection(profile)),
               if (isAdmin) _buildAdminPanelButton() else _buildDashboardButton(),
+              if (!isAdmin) _buildMyPurchasesButton(),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -128,26 +145,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildBusinessInfoSection(Profile profile) {
     final theme = CupertinoTheme.of(context);
     final textTheme = theme.textTheme;
-    String verificationText;
-    Color verificationColor;
-    IconData verificationIcon;
-
-    switch (profile.verification_status) {
-      case 'approved':
-        verificationText = 'موثق';
-        verificationColor = CupertinoColors.activeGreen;
-        verificationIcon = CupertinoIcons.checkmark_seal_fill;
-        break;
-      case 'rejected':
-        verificationText = 'مرفوض';
-        verificationColor = CupertinoColors.destructiveRed;
-        verificationIcon = CupertinoIcons.xmark_seal_fill;
-        break;
-      default:
-        verificationText = 'قيد المراجعة';
-        verificationColor = CupertinoColors.systemYellow;
-        verificationIcon = CupertinoIcons.hourglass;
-    }
 
     return Container(
       margin: const EdgeInsets.all(16.0),
@@ -159,26 +156,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('معلومات الحساب التجاري', style: textTheme.navTitleTextStyle),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('معلومات الحساب التجاري', style: textTheme.navTitleTextStyle),
+              _buildReputationBadge(profile.seller_tier),
+            ],
+          ),
           const SizedBox(height: 16),
           _buildInfoRow(CupertinoIcons.building_2_fill, 'اسم العمل', profile.business_name ?? 'غير محدد'),
           const SizedBox(height: 12),
           _buildInfoRow(CupertinoIcons.person_2, 'نوع الحساب',
               profile.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(verificationIcon, color: verificationColor, size: 20),
-              const SizedBox(width: 16),
-              Text('حالة الحساب:', style: textTheme.textStyle),
-              const Spacer(),
-              Text(verificationText, style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold, color: verificationColor)),
-            ],
-          ),
-          const SizedBox(height: 12),
           const Divider(color: AppTheme.charcoalBackground),
           const SizedBox(height: 12),
           _buildRatingSection(profile),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReputationBadge(String? tier) {
+    IconData icon;
+    Color color;
+    String text = tier ?? 'New Seller';
+
+    switch (text) {
+      case 'Power Seller':
+        icon = CupertinoIcons.checkmark_seal_fill;
+        color = AppTheme.goldAccent;
+        break;
+      case 'Top Seller':
+        icon = CupertinoIcons.star_circle_fill;
+        color = CupertinoColors.systemGreen;
+        break;
+      case 'Rising Star':
+        icon = CupertinoIcons.flame_fill;
+        color = CupertinoColors.systemOrange;
+        break;
+      default: // New Seller
+        icon = CupertinoIcons.person_badge_plus;
+        color = AppTheme.secondaryTextColor;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -206,6 +239,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     title: 'عرض لوحة معلومات التاجر',
     icon: CupertinoIcons.chart_bar_square,
     onTap: () => Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const DashboardScreen())),
+  );
+
+  Widget _buildMyPurchasesButton() => _buildPanelButton(
+    title: 'عرض مشترياتي',
+    icon: CupertinoIcons.shopping_cart,
+    onTap: () => Navigator.of(context).push(CupertinoPageRoute(builder: (context) => const MyPurchasesScreen())),
   );
 
   Widget _buildPanelButton({required String title, required IconData icon, required VoidCallback onTap, bool isPrimary = false}) {
@@ -271,39 +310,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildRatingSection(Profile profile) {
     final textTheme = CupertinoTheme.of(context).textTheme;
-    return GestureDetector(
-      onTap: () {
-        if (profile.rating_count > 0) {
-          Navigator.of(context).push(
-            CupertinoPageRoute(builder: (context) => ReviewsListScreen(revieweeId: profile.id)),
+    return FutureBuilder<int>(
+        future: _reviewCountFuture,
+        builder: (context, snapshot) {
+          final reviewCount = snapshot.data ?? 0;
+          return GestureDetector(
+            onTap: () {
+              if (reviewCount > 0) {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(builder: (context) => ReviewsListScreen(revieweeId: profile.id)),
+                );
+              }
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('تقييم التاجر', style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold)),
+                    if (reviewCount > 0)
+                      const Icon(CupertinoIcons.forward, size: 18, color: CupertinoColors.systemGrey)
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildStarRating(profile.reputation_score ?? 0),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${(profile.reputation_score ?? 0).toStringAsFixed(1)} ($reviewCount تقييم)',
+                      style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           );
-        }
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('تقييم التاجر', style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold)),
-              if (profile.rating_count > 0)
-                const Icon(CupertinoIcons.forward, size: 18, color: CupertinoColors.systemGrey)
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildStarRating(profile.average_rating),
-              const SizedBox(width: 8),
-              Text(
-                '${profile.average_rating.toStringAsFixed(1)} (${profile.rating_count} تقييم)',
-                style: textTheme.textStyle.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+        });
   }
 
   Widget _buildStarRating(double rating) {
