@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/charity_campaign_model.dart';
@@ -51,7 +52,7 @@ class _CharityScreenState extends State<CharityScreen> {
       navigationBar: const CupertinoNavigationBar(
         middle: Text('دعم القضايا الخيرية'),
       ),
-      child: RefreshIndicator.adaptive(
+      child: material.RefreshIndicator.adaptive(
         onRefresh: () async {
           setState(() {
               _charityDataFuture = _fetchCharityData();
@@ -242,11 +243,11 @@ class _CharityScreenState extends State<CharityScreen> {
                   const SizedBox(height: 4),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
+                    child: material.LinearProgressIndicator(
                       value: progress,
                       minHeight: 8,
                       backgroundColor: AppTheme.charcoalBackground,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.goldAccent),
+                      valueColor: const material.AlwaysStoppedAnimation<Color>(AppTheme.goldAccent),
                     ),
                   ),
                 ],
@@ -264,9 +265,9 @@ class CupertinoListTileDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.0),
-      child: Divider(color: AppTheme.darkSurface),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: material.Divider(color: AppTheme.darkSurface),
     );
   }
 }

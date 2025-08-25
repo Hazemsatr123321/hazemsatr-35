@@ -12,9 +12,10 @@ import 'package:smart_iraq/src/core/providers/theme_provider.dart';
 import 'package:smart_iraq/src/ui/screens/splash_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:smart_iraq/src/repositories/chat_repository.dart';
-import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/repositories/chat_repository.dart';
+import 'package:smart_iraq/src/ui/widgets/filter_modal.dart';
+import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/models/chat_room_model.dart';
 import 'package:smart_iraq/src/models/message_model.dart';
 
@@ -22,8 +23,7 @@ class FakeProductRepository implements ProductRepository {
   @override
   Future<List<Product>> getProducts({
     String? query,
-    String? category,
-    bool? sortAscending,
+    FilterOptions? filters,
   }) async {
     return [];
   }
