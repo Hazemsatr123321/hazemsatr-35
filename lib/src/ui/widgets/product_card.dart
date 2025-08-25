@@ -1,7 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/screens/product_detail_screen.dart';
+import 'package:smart_iraq/src/ui/screens/auction/auction_detail_screen.dart';
 import 'dart:ui';
+import 'package:smart_iraq/src/core/theme/app_theme.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -19,29 +22,23 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
+    final bool isAuction = product.listing_type == 'auction';
+    final theme = CupertinoTheme.of(context);
 
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => ProductDetailScreen(productId: product.id),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 400),
+          CupertinoPageRoute(
+            builder: (context) => isAuction
+                ? AuctionDetailScreen(product: product)
+                : ProductDetailScreen(productId: product.id),
           ),
         );
       },
-      child: Card(
-        elevation: 6,
-        shadowColor: Colors.black.withOpacity(0.3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        clipBehavior: Clip.antiAlias,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15.0),
         child: Stack(
           children: [
-            // --- Background Image ---
             Positioned.fill(
               child: Hero(
                 tag: 'product-image-${product.id}',
@@ -54,7 +51,6 @@ class ProductCard extends StatelessWidget {
                     : _buildImagePlaceholder(),
               ),
             ),
-            // --- Gradient Overlay ---
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -62,115 +58,113 @@ class ProductCard extends StatelessWidget {
                     colors: [Colors.black.withOpacity(0.8), Colors.transparent, Colors.black.withOpacity(0.8)],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.5, 1.0],
+                    stops: const [0.0, 0.4, 1.0],
                   ),
                 ),
               ),
             ),
-            // --- Content ---
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   // Top right price tag
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                             color: colorScheme.primary.withOpacity(0.7),
-                             borderRadius: BorderRadius.circular(10)
-                          ),
-                          child: Text(
-                            '${product.price} د.ع',
-                            style: textTheme.bodyLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Bottom left details
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.name,
-                        style: textTheme.titleLarge?.copyWith(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold, shadows: [const Shadow(blurRadius: 2, color: Colors.black87)]),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (product.category != null) ...[
-                        const SizedBox(height: 4.0),
-                        Text(
-                          product.category!,
-                          style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.9), shadows: [const Shadow(blurRadius: 1, color: Colors.black54)]),
-                        ),
-                      ],
-                    ],
-                  ),
+                  _buildPriceTag(theme, isAuction),
+                  _buildTitleAndCategory(theme),
                 ],
               ),
             ),
-            // --- Featured Badge ---
-            if (product.is_featured)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.star, color: Colors.white, size: 18),
-                    ),
-                  ),
-                ),
-              ),
-             // --- Controls Section ---
-            if (showControls)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                    child: Container(
-                      color: Colors.black.withOpacity(0.3),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          TextButton.icon(
-                            icon: const Icon(Icons.edit, size: 18, color: Colors.white),
-                            label: const Text('تعديل', style: TextStyle(color: Colors.white)),
-                            onPressed: onEdit,
-                          ),
-                          TextButton.icon(
-                            icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
-                            label: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
-                            onPressed: onDelete,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            if (showControls) _buildControls(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceTag(CupertinoThemeData theme, bool isAuction) {
+    String text;
+    Color color;
+    IconData? icon;
+
+    if (isAuction) {
+      text = '${product.highest_bid ?? product.start_price} د.ع';
+      color = AppTheme.goldAccent;
+      icon = CupertinoIcons.gavel;
+    } else {
+      text = '${product.price} د.ع';
+      color = theme.primaryColor;
+      icon = null;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[Icon(icon, color: Colors.white, size: 16), const SizedBox(width: 4)],
+              Text(text, style: theme.textTheme.textStyle.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitleAndCategory(CupertinoThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          product.name,
+          style: theme.textTheme.navTitleTextStyle.copyWith(color: Colors.white, shadows: [const Shadow(blurRadius: 2, color: Colors.black87)]),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (product.category != null) ...[
+          const SizedBox(height: 4.0),
+          Text(
+            product.category!,
+            style: theme.textTheme.textStyle.copyWith(fontSize: 14, color: Colors.white.withOpacity(0.9), shadows: [const Shadow(blurRadius: 1, color: Colors.black54)]),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildControls() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+          child: Container(
+            color: Colors.black.withOpacity(0.3),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(CupertinoIcons.pencil, size: 18), SizedBox(width: 4), Text('تعديل')]),
+                  onPressed: onEdit,
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(CupertinoIcons.delete, size: 18, color: CupertinoColors.destructiveRed), SizedBox(width: 4), Text('حذف')]),
+                  onPressed: onDelete,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -178,8 +172,8 @@ class ProductCard extends StatelessWidget {
 
   Widget _buildImagePlaceholder() {
     return Container(
-      color: Colors.grey[300],
-      child: const Icon(Icons.inventory_2_outlined, color: Colors.grey, size: 50),
+      color: AppTheme.darkSurface,
+      child: const Icon(CupertinoIcons.photo, color: AppTheme.secondaryTextColor, size: 50),
     );
   }
 }
