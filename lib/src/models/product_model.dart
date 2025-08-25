@@ -8,6 +8,7 @@ class Product {
   final String? imageUrl;
   final String userId;
   final String? category;
+  final String? condition; // new, used
   final Profile? seller;
 
   // B2B Fields
@@ -37,6 +38,7 @@ class Product {
     this.imageUrl,
     required this.userId,
     this.category,
+    this.condition,
     this.seller,
     this.minimum_order_quantity,
     this.stock_quantity,
@@ -59,6 +61,7 @@ class Product {
       imageUrl: json['image_url'] as String?,
       userId: json['user_id'] as String,
       category: json['category'] as String?,
+      condition: json['condition'] as String?,
       seller: json['profiles'] == null ? null : Profile.fromJson(json['profiles']),
       minimum_order_quantity: json['minimum_order_quantity'] as int?,
       stock_quantity: json['stock_quantity'] as int?,

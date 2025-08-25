@@ -1,11 +1,12 @@
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:smart_iraq/src/ui/widgets/filter_modal.dart';
+
 abstract class ProductRepository {
   Future<List<Product>> getProducts({
     String? query,
-    String? category,
-    bool? sortAscending,
+    FilterOptions? filters,
   });
 }
 
@@ -17,26 +18,34 @@ class SupabaseProductRepository implements ProductRepository {
   @override
   Future<List<Product>> getProducts({
     String? query,
-    String? category,
-    bool? sortAscending,
+    FilterOptions? filters,
   }) async {
     try {
       dynamic request = _supabase.from('products').select();
 
       if (query != null && query.isNotEmpty) {
-        request = request.ilike('title', '%$query%');
+        request = request.or('name.ilike.%$query%,description.ilike.%$query%');
       }
 
-      if (category != null && category.isNotEmpty) {
-        request = request.eq('category', category);
+      if (filters != null) {
+        if (filters.category != null && filters.category!.isNotEmpty) {
+          request = request.eq('category', filters.category);
+        }
+        if (filters.condition != null && filters.condition!.isNotEmpty) {
+          request = request.eq('condition', filters.condition);
+        }
+        if (filters.sortBy != null && filters.sortBy!.isNotEmpty) {
+          request = request.order(
+            filters.sortBy!,
+            ascending: filters.sortAscending ?? false,
+          );
+        }
       }
 
-      if (sortAscending != null) {
-        request = request.order('price', ascending: sortAscending);
+      // Add a secondary sort by creation date to ensure consistent ordering, unless already sorting by it
+      if (filters?.sortBy != 'created_at') {
+        request = request.order('created_at', ascending: false);
       }
-
-      // Add a secondary sort by creation date to ensure consistent ordering
-      request = request.order('created_at', ascending: false);
 
       final data = await request;
       final products = (data as List).map((json) {
