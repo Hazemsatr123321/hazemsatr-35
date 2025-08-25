@@ -3,9 +3,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart' as custom;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -196,8 +201,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
               CupertinoFormSection.insetGrouped(
                 header: const Text('المعلومات الأساسية'),
                 children: [
-                  CupertinoTextFormFieldRow(controller: _nameController, prefix: const Text('الاسم'), placeholder: 'اسم المنتج', validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                  CupertinoTextFormFieldRow(controller: _descriptionController, prefix: const Text('الوصف'), placeholder: 'وصف المنتج', maxLines: 4, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
+                  CupertinoTextFormFieldRow(prefix: const Text('الاسم'), controller: _nameController, placeholder: 'اسم المنتج', validator: (v) => v!.isEmpty ? 'مطلوب' : null),
+                  CupertinoTextFormFieldRow(prefix: const Text('الوصف'), controller: _descriptionController, placeholder: 'وصف المنتج', maxLines: 4, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
                    custom.CupertinoListTile(
                     title: const Text('الفئة'),
                     trailing: Row(mainAxisSize: MainAxisSize.min, children: [Text(_selectedCategory ?? 'اختر'), const SizedBox(width: 8), const custom.CupertinoListTileChevron()]),
@@ -208,22 +213,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 CupertinoFormSection.insetGrouped(
                   header: const Text('التسعير (سعر ثابت)'),
                   children: [
-                    CupertinoTextFormFieldRow(controller: _priceController, prefix: const Text('السعر'), placeholder: 'سعر الوحدة', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
+                    CupertinoTextFormFieldRow(prefix: const Text('السعر'), controller: _priceController, placeholder: 'سعر الوحدة', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
                   ],
                 ),
               if (_listingType == 'auction')
                 CupertinoFormSection.insetGrouped(
                   header: const Text('التسعير (مزاد)'),
                   children: [
-                     CupertinoTextFormFieldRow(controller: _startPriceController, prefix: const Text('السعر الابتدائي'), placeholder: 'أقل سعر للبدء', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                     CupertinoTextFormFieldRow(controller: _endDateController, prefix: const Text('تاريخ الانتهاء'), placeholder: 'اختر تاريخ ووقت', readOnly: true, onTap: _showDatePicker),
+                     CupertinoTextFormFieldRow(prefix: const Text('السعر الابتدائي'), controller: _startPriceController, placeholder: 'أقل سعر للبدء', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
+                     CupertinoTextFormFieldRow(prefix: const Text('تاريخ الانتهاء'), controller: _endDateController, placeholder: 'اختر تاريخ ووقت', readOnly: true, onTap: _showDatePicker),
                   ],
                 ),
               CupertinoFormSection.insetGrouped(
                  header: const Text('معلومات الجملة'),
                  children: [
-                    CupertinoTextFormFieldRow(controller: _stockQuantityController, prefix: const Text('الكمية'), placeholder: 'الكمية المتوفرة', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
-                    CupertinoTextFormFieldRow(controller: _minOrderQuantityController, prefix: const Text('أقل طلب'), placeholder: 'أقل كمية للطلب', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
+                    CupertinoTextFormFieldRow(prefix: const Text('الكمية'), controller: _stockQuantityController, placeholder: 'الكمية المتوفرة', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
+                    CupertinoTextFormFieldRow(prefix: const Text('أقل طلب'), controller: _minOrderQuantityController, placeholder: 'أقل كمية للطلب', keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'مطلوب' : null),
                     custom.CupertinoListTile(
                       title: const Text('الوحدة'),
                       trailing: Row(mainAxisSize: MainAxisSize.min, children: [Text(_selectedUnitType ?? 'اختر'), const SizedBox(width: 8), const custom.CupertinoListTileChevron()]),
@@ -237,46 +242,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// Helper widget because the default one is not a FormField
-class CupertinoTextFormFieldRow extends StatelessWidget {
-  final TextEditingController controller;
-  final String placeholder;
-  final Widget prefix;
-  final int? maxLines;
-  final bool readOnly;
-  final VoidCallback? onTap;
-  final FormFieldValidator<String>? validator;
-  final TextInputType? keyboardType;
-
-  const CupertinoTextFormFieldRow({
-    Key? key,
-    required this.controller,
-    required this.placeholder,
-    required this.prefix,
-    this.maxLines = 1,
-    this.readOnly = false,
-    this.onTap,
-    this.validator,
-    this.keyboardType,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoFormRow(
-      prefix: prefix,
-      child: CupertinoTextFormField(
-        controller: controller,
-        placeholder: placeholder,
-        maxLines: maxLines,
-        readOnly: readOnly,
-        onTap: onTap,
-        keyboardType: keyboardType,
-        validator: validator,
       ),
     );
   }

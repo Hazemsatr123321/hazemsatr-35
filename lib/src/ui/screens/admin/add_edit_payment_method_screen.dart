@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:smart_iraq/src/ui/widgets/cupertino_text_form_field_row.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddEditPaymentMethodScreen extends StatefulWidget {
@@ -49,21 +48,27 @@ class _AddEditPaymentMethodScreenState extends State<AddEditPaymentMethodScreen>
             padding: const EdgeInsets.all(16.0),
             children: [
               CupertinoTextFormFieldRow(
-                controller: _nameController,
                 prefix: const Text('Method Name'),
-                placeholder: 'e.g., Zain Cash',
-                validator: (value) => value!.isEmpty ? 'This field is required' : null,
+                child: CupertinoTextFormField(
+                  controller: _nameController,
+                  placeholder: 'e.g., Zain Cash',
+                  validator: (value) => value!.isEmpty ? 'This field is required' : null,
+                ),
               ),
               CupertinoTextFormFieldRow(
-                controller: _detailsController,
                 prefix: const Text('Account Details'),
-                placeholder: 'e.g., 0780 123 4567',
-                validator: (value) => value!.isEmpty ? 'This field is required' : null,
+                child: CupertinoTextFormField(
+                  controller: _detailsController,
+                  placeholder: 'e.g., 0780 123 4567',
+                  validator: (value) => value!.isEmpty ? 'This field is required' : null,
+                ),
               ),
               CupertinoTextFormFieldRow(
-                controller: _instructionsController,
                 prefix: const Text('Instructions'),
-                placeholder: 'Optional instructions for user',
+                child: CupertinoTextFormField(
+                  controller: _instructionsController,
+                  placeholder: 'Optional instructions for user',
+                ),
               ),
               CupertinoFormRow(
                 prefix: const Text('Active'),

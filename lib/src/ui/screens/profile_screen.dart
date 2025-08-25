@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
@@ -58,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await _supabase
           .from('reviews')
-          .select('*', const FetchOptions(count: CountOption.exact, head: true))
+          .select(options: const FetchOptions(count: CountOption.exact, head: true))
           .eq('seller_id', _user!.id);
       return response.count ?? 0;
     } catch (e) {

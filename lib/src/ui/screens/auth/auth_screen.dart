@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
 import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
-import 'package:smart_iraq/src/ui/widgets/cupertino_text_form_field_row.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -148,10 +147,10 @@ class _AuthScreenState extends State<AuthScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    _buildTextField(
+                    CupertinoTextFormFieldRow(
+                      prefix: const Icon(CupertinoIcons.mail, color: AppTheme.secondaryTextColor),
                       controller: _emailController,
                       placeholder: 'البريد الإلكتروني',
-                      icon: CupertinoIcons.mail,
                       keyboardType: TextInputType.emailAddress,
                       validator: (val) {
                         if (val == null || val.isEmpty || !val.contains('@')) {
@@ -161,10 +160,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
+                    CupertinoTextFormFieldRow(
+                      prefix: const Icon(CupertinoIcons.lock, color: AppTheme.secondaryTextColor),
                       controller: _passwordController,
                       placeholder: 'كلمة المرور',
-                      icon: CupertinoIcons.lock,
                       obscureText: true,
                       validator: (val) {
                         if (val == null || val.isEmpty) {
@@ -221,29 +220,4 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String placeholder,
-    required IconData icon,
-    bool obscureText = false,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return CupertinoTextFormFieldRow(
-      controller: controller,
-      placeholder: placeholder,
-      prefix: Padding(
-        padding: const EdgeInsets.only(left: 16.0),
-        child: Icon(icon, color: AppTheme.secondaryTextColor),
-      ),
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.darkSurface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      validator: validator,
-    );
-  }
 }
