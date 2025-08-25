@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
 import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_text_form_field_row.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -243,62 +244,6 @@ class _AuthScreenState extends State<AuthScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       validator: validator,
-    );
-  }
-}
-
-// Custom TextFormFieldRow to integrate validation with Cupertino styling
-class CupertinoTextFormFieldRow extends StatelessWidget {
-  final Widget prefix;
-  final String placeholder;
-  final TextEditingController controller;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-  final EdgeInsets padding;
-  final BoxDecoration decoration;
-  final String? Function(String?)? validator;
-
-  const CupertinoTextFormFieldRow({
-    super.key,
-    required this.prefix,
-    required this.placeholder,
-    required this.controller,
-    this.obscureText = false,
-    this.keyboardType,
-    required this.padding,
-    required this.decoration,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FormField<String>(
-      validator: validator,
-      builder: (FormFieldState<String> field) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CupertinoTextField(
-              controller: controller,
-              placeholder: placeholder,
-              keyboardType: keyboardType,
-              obscureText: obscureText,
-              padding: padding,
-              prefix: prefix,
-              decoration: decoration,
-              onChanged: (text) => field.didChange(text),
-            ),
-            if (field.hasError)
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0, top: 4.0),
-                child: Text(
-                  field.errorText!,
-                  style: const TextStyle(color: CupertinoColors.systemRed, fontSize: 12),
-                ),
-              ),
-          ],
-        );
-      },
     );
   }
 }

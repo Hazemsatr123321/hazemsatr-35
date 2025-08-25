@@ -42,7 +42,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       extendBody: true,
       bottomNavigationBar: StylishBottomBar(
         option: BubbleBarOptions(
-          barStyle: BubbleBarStyle.horizotnal,
+          barStyle: BubbleBarStyle.horizontal,
           bubbleFillStyle: BubbleFillStyle.fill,
           opacity: 0.3,
         ),

@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final managedAdsFuture = _supabase.from('managed_ads').select().eq('is_active', true);
     final campaignsFuture = _supabase.from('charity_campaigns').select().eq('is_active', true);
 
-    final results = await Future.wait([productsFuture, managedAdsFuture, campaignsFuture]);
+    final results = await Future.wait<dynamic>([productsFuture, managedAdsFuture, campaignsFuture]);
 
     final allProducts = results[0] as List<Product>;
     final managedAdsData = results[1] as List;

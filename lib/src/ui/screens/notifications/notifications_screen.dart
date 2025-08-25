@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart' hide Notification;
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/services/notification_service.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';

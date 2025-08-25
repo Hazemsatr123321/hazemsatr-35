@@ -8,7 +8,6 @@ import 'package:smart_iraq/src/ui/screens/rfq/create_rfq_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/filter_modal.dart';
 import 'package:smart_iraq/src/ui/widgets/notification_icon.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
-import 'package.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 
 class AdsScreen extends StatefulWidget {

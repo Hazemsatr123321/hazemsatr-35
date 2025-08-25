@@ -15,6 +15,23 @@ class AddProductScreen extends StatefulWidget {
 }
 
 class _AddProductScreenState extends State<AddProductScreen> {
+  void _showPicker(BuildContext context, {required List<String> options, required ValueChanged<String> onSelectedItemChanged}) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => Container(
+        height: 250,
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        child: CupertinoPicker(
+          itemExtent: 32.0,
+          onSelectedItemChanged: (int index) {
+            onSelectedItemChanged(options[index]);
+          },
+          children: options.map((String value) => Center(child: Text(value))).toList(),
+        ),
+      ),
+    );
+  }
+
   final _formKey = GlobalKey<FormState>();
   String _listingType = 'sale'; // 'sale' or 'auction'
 
@@ -165,14 +182,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
               const SizedBox(height: 24),
               CupertinoFormSection.insetGrouped(
                 header: const Text('نوع الإعلان'),
-                child: CupertinoSlidingSegmentedControl<String>(
-                  groupValue: _listingType,
-                  onValueChanged: (value) => setState(() => _listingType = value!),
-                  children: const {
-                    'sale': Text('سعر ثابت'),
-                    'auction': Text('مزاد'),
-                  },
-                ),
+                children: [
+                  CupertinoSlidingSegmentedControl<String>(
+                    groupValue: _listingType,
+                    onValueChanged: (value) => setState(() => _listingType = value!),
+                    children: const {
+                      'sale': Text('سعر ثابت'),
+                      'auction': Text('مزاد'),
+                    },
+                  ),
+                ],
               ),
               CupertinoFormSection.insetGrouped(
                 header: const Text('المعلومات الأساسية'),
@@ -218,6 +237,46 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Helper widget because the default one is not a FormField
+class CupertinoTextFormFieldRow extends StatelessWidget {
+  final TextEditingController controller;
+  final String placeholder;
+  final Widget prefix;
+  final int? maxLines;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final FormFieldValidator<String>? validator;
+  final TextInputType? keyboardType;
+
+  const CupertinoTextFormFieldRow({
+    Key? key,
+    required this.controller,
+    required this.placeholder,
+    required this.prefix,
+    this.maxLines = 1,
+    this.readOnly = false,
+    this.onTap,
+    this.validator,
+    this.keyboardType,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoFormRow(
+      prefix: prefix,
+      child: CupertinoTextFormField(
+        controller: controller,
+        placeholder: placeholder,
+        maxLines: maxLines,
+        readOnly: readOnly,
+        onTap: onTap,
+        keyboardType: keyboardType,
+        validator: validator,
       ),
     );
   }

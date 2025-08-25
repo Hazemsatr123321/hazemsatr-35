@@ -32,8 +32,8 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
     try {
       final data = await _supabase
           .from('reviews')
-          .select('*, profiles(business_name, username)')
-          .eq('reviewee_id', widget.revieweeId)
+          .select('*, buyer:buyer_id(*)')
+          .eq('seller_id', widget.revieweeId)
           .order('created_at', ascending: false);
       return (data as List).map((json) => Review.fromJson(json)).toList();
     } catch (e) {
@@ -74,7 +74,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          review.reviewerUsername ?? 'مستخدم غير معروف',
+                          review.buyer?.business_name ?? 'Anonymous',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         _buildStarRating(review.rating.toDouble()),

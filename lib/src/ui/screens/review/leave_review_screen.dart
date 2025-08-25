@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/providers/profile_provider.dart';
 import '../../../models/product_model.dart';
 
 class LeaveReviewScreen extends StatefulWidget {
@@ -35,8 +34,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
       _isLoading = true;
     });
 
-    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
-    final buyerId = profileProvider.profile?.id;
+    final buyerId = Supabase.instance.client.auth.currentUser?.id;
 
     if (buyerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,7 +53,7 @@ class _LeaveReviewScreenState extends State<LeaveReviewScreen> {
       await Supabase.instance.client.from('reviews').insert({
         'product_id': widget.product.id,
         'buyer_id': buyerId,
-        'seller_id': widget.product.sellerId,
+        'seller_id': widget.product.userId,
         'rating': _rating.toInt(),
         'comment': _commentController.text,
       });

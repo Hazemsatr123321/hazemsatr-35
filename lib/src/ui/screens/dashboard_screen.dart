@@ -68,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // Calculate stats
           final totalAds = products.length;
-          final totalValue = products.fold<double>(0.0, (sum, item) => sum + item.price);
+          final totalValue = products.fold<double>(0.0, (sum, item) => sum + (item.price?.toDouble() ?? 0.0));
 
           final currencyFormat = NumberFormat.currency(locale: 'ar_IQ', symbol: 'د.ع');
 

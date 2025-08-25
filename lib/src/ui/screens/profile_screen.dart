@@ -58,9 +58,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await _supabase
           .from('reviews')
-          .select('id', const FetchOptions(count: CountOption.exact))
+          .select('*', const FetchOptions(count: CountOption.exact, head: true))
           .eq('seller_id', _user!.id);
-      return response.count;
+      return response.count ?? 0;
     } catch (e) {
       return 0;
     }
@@ -172,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildInfoRow(CupertinoIcons.person_2, 'نوع الحساب',
               profile.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
           const SizedBox(height: 12),
-          const Divider(color: AppTheme.charcoalBackground),
+          Divider(color: AppTheme.charcoalBackground),
           const SizedBox(height: 12),
           _buildRatingSection(profile),
         ],

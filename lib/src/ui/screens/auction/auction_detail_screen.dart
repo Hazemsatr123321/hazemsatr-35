@@ -72,23 +72,19 @@ class _AuctionDetailScreenState extends State<AuctionDetailScreen> {
   }
 
   void _subscribeToBids() {
-    _bidsChannel = _supabase
-        .channel('public:bids:product_id=eq.${widget.product.id}')
-        .on<Map<String, dynamic>>(
-          'postgres_changes',
-          (payload) {
-            final newBidJson = payload['new'];
-            // The profile data won't be in the realtime payload, so we refetch.
-            setState(() {
-              _currentHighestBid = newBidJson['amount'];
-              _bidsFuture = _fetchBids();
-            });
-          },
-          event: 'INSERT',
-          schema: 'public',
-          table: 'bids',
-        )
-        .subscribe();
+    _bidsChannel = _supabase.channel('public:bids:product_id=eq.${widget.product.id}');
+    _bidsChannel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'bids',
+      callback: (payload) {
+        final newBidJson = payload.newRecord;
+        setState(() {
+          _currentHighestBid = newBidJson['amount'];
+          _bidsFuture = _fetchBids();
+        });
+      },
+    ).subscribe();
   }
 
   Future<void> _placeBid() async {

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_text_form_field_row.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddEditPaymentMethodScreen extends StatefulWidget {
@@ -81,34 +82,6 @@ class _AddEditPaymentMethodScreenState extends State<AddEditPaymentMethodScreen>
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// Helper widget to integrate standard TextFormField into Cupertino forms
-class CupertinoTextFormFieldRow extends StatelessWidget {
-  final TextEditingController controller;
-  final String placeholder;
-  final Widget prefix;
-  final FormFieldValidator<String>? validator;
-
-  const CupertinoTextFormFieldRow({
-    Key? key,
-    required this.controller,
-    required this.placeholder,
-    required this.prefix,
-    this.validator,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoFormRow(
-      prefix: prefix,
-      child: CupertinoTextFormField(
-        controller: controller,
-        placeholder: placeholder,
-        validator: validator,
       ),
     );
   }

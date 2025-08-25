@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_text_form_field_row.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
@@ -116,43 +117,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Re-using helper from AuthScreen
-class CupertinoTextFormFieldRow extends StatelessWidget {
-  final TextEditingController controller;
-  final String placeholder;
-  final Widget prefix;
-  final bool obscureText;
-  final FormFieldValidator<String>? validator;
-  final TextInputType? keyboardType;
-
-  const CupertinoTextFormFieldRow({
-    Key? key,
-    required this.controller,
-    required this.placeholder,
-    required this.prefix,
-    this.obscureText = false,
-    this.validator,
-    this.keyboardType,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: CupertinoFormRow(
-        prefix: prefix,
-        child: CupertinoTextFormField(
-          controller: controller,
-          placeholder: placeholder,
-          obscureText: obscureText,
-          validator: validator,
-          keyboardType: keyboardType,
         ),
       ),
     );

@@ -4,7 +4,6 @@ import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
 import 'package:smart_iraq/src/ui/screens/review/leave_review_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
-import 'package.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyPurchasesScreen extends StatefulWidget {

@@ -91,7 +91,7 @@ class ProductCard extends StatelessWidget {
     if (isAuction) {
       text = '${product.highest_bid ?? product.start_price} د.ع';
       color = AppTheme.goldAccent;
-      icon = CupertinoIcons.gavel;
+      icon = CupertinoIcons.hammer_fill;
     } else {
       text = '${product.price} د.ع';
       color = theme.primaryColor;

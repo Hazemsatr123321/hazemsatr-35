@@ -152,7 +152,7 @@ class _RfqDetailScreenState extends State<RfqDetailScreen> {
                     _buildRfqInfo(rfq),
                     const SizedBox(height: 24),
                     Text('العروض المستلمة (${rfq.offers.length})', style: CupertinoTheme.of(context).textTheme.navTitleTextStyle),
-                    const Divider(color: AppTheme.darkSurface),
+                    Divider(color: AppTheme.darkSurface),
                     if (rfq.offers.isEmpty)
                       const Padding(padding: EdgeInsets.all(32.0), child: Center(child: Text('لم يتم تقديم أي عروض بعد.')))
                     else
