@@ -49,26 +49,20 @@ class _AddEditPaymentMethodScreenState extends State<AddEditPaymentMethodScreen>
             children: [
               CupertinoTextFormFieldRow(
                 prefix: const Text('Method Name'),
-                child: CupertinoTextFormField(
-                  controller: _nameController,
-                  placeholder: 'e.g., Zain Cash',
-                  validator: (value) => value!.isEmpty ? 'This field is required' : null,
-                ),
+                controller: _nameController,
+                placeholder: 'e.g., Zain Cash',
+                validator: (value) => value!.isEmpty ? 'This field is required' : null,
               ),
               CupertinoTextFormFieldRow(
                 prefix: const Text('Account Details'),
-                child: CupertinoTextFormField(
-                  controller: _detailsController,
-                  placeholder: 'e.g., 0780 123 4567',
-                  validator: (value) => value!.isEmpty ? 'This field is required' : null,
-                ),
+                controller: _detailsController,
+                placeholder: 'e.g., 0780 123 4567',
+                validator: (value) => value!.isEmpty ? 'This field is required' : null,
               ),
               CupertinoTextFormFieldRow(
                 prefix: const Text('Instructions'),
-                child: CupertinoTextFormField(
-                  controller: _instructionsController,
-                  placeholder: 'Optional instructions for user',
-                ),
+                controller: _instructionsController,
+                placeholder: 'Optional instructions for user',
               ),
               CupertinoFormRow(
                 prefix: const Text('Active'),

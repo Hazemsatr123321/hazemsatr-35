@@ -57,11 +57,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<int> _getReviewCount() async {
     if (_user == null) return 0;
     try {
+      // A simpler, more compatible way to get the count
       final response = await _supabase
           .from('reviews')
-          .select(options: const FetchOptions(count: CountOption.exact, head: true))
+          .select('id')
           .eq('seller_id', _user!.id);
-      return response.count ?? 0;
+      return response.length;
     } catch (e) {
       return 0;
     }
