@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:smart_iraq/src/ui/screens/admin/payment_methods_management_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart' as custom;
-import 'package:smart_iraq/src/ui/screens/admin/donation_methods_management_screen.dart';
-import 'package:smart_iraq/src/ui/screens/admin/feature_management_screen.dart';
+import 'package:smart_iraq/src/ui/screens/admin/feature_requests_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/managed_ads_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/user_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/product_management_screen.dart';
@@ -43,25 +43,25 @@ class AdminPanelScreen extends StatelessWidget {
           ),
           const _Divider(),
           custom.CupertinoListTile(
-            title: const Text('تمييز الإعلانات'),
-            subtitle: const Text('اختيار إعلانات المستخدمين لعرضها بشكل مميز'),
-            leading: const Icon(CupertinoIcons.star_fill),
+            title: const Text('طلبات تمييز الإعلانات'),
+            subtitle: const Text('مراجعة طلبات المستخدمين والموافقة عليها'),
+            leading: const Icon(CupertinoIcons.star_circle),
             trailing: const Icon(CupertinoIcons.forward),
             onTap: () {
                Navigator.of(context).push(
-                CupertinoPageRoute(builder: (context) => const FeatureManagementScreen()),
+                CupertinoPageRoute(builder: (context) => const FeatureRequestsScreen()),
               );
             },
           ),
           const _Divider(),
           custom.CupertinoListTile(
             title: const Text('إدارة طرق الدفع'),
-            subtitle: const Text('التحكم بحسابات التبرع اليدوية'),
+            subtitle: const Text('التحكم بحسابات تمييز الإعلانات والتبرعات'),
             leading: const Icon(CupertinoIcons.money_dollar_circle),
             trailing: const Icon(CupertinoIcons.forward),
             onTap: () {
                Navigator.of(context).push(
-                CupertinoPageRoute(builder: (context) => const DonationMethodsManagementScreen()),
+                CupertinoPageRoute(builder: (context) => const PaymentMethodsManagementScreen()),
               );
             },
           ),

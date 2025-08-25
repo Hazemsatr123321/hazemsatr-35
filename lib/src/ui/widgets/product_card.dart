@@ -11,6 +11,7 @@ class ProductCard extends StatelessWidget {
   final bool showControls;
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
+  final VoidCallback? onFeature;
 
   const ProductCard({
     super.key,
@@ -18,6 +19,7 @@ class ProductCard extends StatelessWidget {
     this.showControls = false,
     this.onDelete,
     this.onEdit,
+    this.onFeature,
   });
 
   @override
@@ -140,6 +142,7 @@ class ProductCard extends StatelessWidget {
   }
 
   Widget _buildControls() {
+    final isFeatured = product.is_featured;
     return Positioned(
       bottom: 0,
       left: 0,
@@ -156,6 +159,18 @@ class ProductCard extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(CupertinoIcons.pencil, size: 18), SizedBox(width: 4), Text('تعديل')]),
                   onPressed: onEdit,
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: onFeature,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(CupertinoIcons.star_fill, size: 18, color: isFeatured ? CupertinoColors.systemGrey : AppTheme.goldAccent),
+                      const SizedBox(width: 4),
+                      Text('تمييز', style: TextStyle(color: isFeatured ? CupertinoColors.systemGrey : AppTheme.goldAccent)),
+                    ],
+                  ),
                 ),
                 CupertinoButton(
                   padding: EdgeInsets.zero,

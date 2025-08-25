@@ -7,6 +7,7 @@ import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/screens/admin/admin_panel_screen.dart';
 import 'package:smart_iraq/src/ui/screens/dashboard_screen.dart';
 import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
+import 'package:smart_iraq/src/ui/screens/feature/feature_ad_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile/my_purchases_screen.dart';
 import 'package:smart_iraq/src/ui/screens/reviews_list_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
@@ -296,10 +297,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             delegate: SliverChildBuilderDelegate((context, index) {
               final product = products[index];
               return ProductCard(
-                      product: product,
-                      showControls: isAdmin || product.userId == _user?.id,
-                      onDelete: () => _deleteProduct(product),
-                      onEdit: () => _editProduct(product))
+                product: product,
+                showControls: isAdmin || product.userId == _user?.id,
+                onDelete: () => _deleteProduct(product),
+                onEdit: () => _editProduct(product),
+                onFeature: product.is_featured ? null : () {
+                  Navigator.of(context).push(CupertinoPageRoute(
+                    builder: (context) => FeatureAdScreen(product: product),
+                  ));
+                },
+              )
                   .animate()
                   .fadeIn(duration: 500.ms, delay: (100 * (index % 2)).ms)
                   .slideY(begin: 0.5, duration: 500.ms, delay: (100 * (index % 2)).ms, curve: Curves.easeOut);
