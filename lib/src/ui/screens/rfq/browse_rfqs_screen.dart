@@ -1,28 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_iraq/src/models/rfq_model.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart' as custom;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:smart_iraq/src/ui/screens/rfq/rfq_detail_screen.dart';
-
-// A simple model for this screen, can be moved later
-class Rfq {
-  final String id;
-  final String description;
-  final String? quantity;
-  final DateTime createdAt;
-
-  Rfq({required this.id, required this.description, this.quantity, required this.createdAt});
-
-  factory Rfq.fromJson(Map<String, dynamic> json) {
-    return Rfq(
-      id: json['id'],
-      description: json['product_description'],
-      quantity: json['quantity'],
-      createdAt: DateTime.parse(json['created_at']),
-    );
-  }
-}
 
 
 class BrowseRfqsScreen extends StatefulWidget {
@@ -65,8 +48,6 @@ class _BrowseRfqsScreenState extends State<BrowseRfqsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    timeago.setLocaleMessages('ar', timeago.ArMessages());
-
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('طلبات عروض الأسعار'),
@@ -94,8 +75,8 @@ class _BrowseRfqsScreenState extends State<BrowseRfqsScreen> {
             itemCount: rfqs.length,
             itemBuilder: (context, index) {
               final rfq = rfqs[index];
-              return CupertinoListTile(
-                title: Text(rfq.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+              return custom.CupertinoListTile(
+                title: Text(rfq.title, maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text('الكمية: ${rfq.quantity ?? 'غير محدد'}'),
                 trailing: Text(timeago.format(rfq.createdAt, locale: 'ar')),
                 onTap: () {
@@ -107,58 +88,6 @@ class _BrowseRfqsScreenState extends State<BrowseRfqsScreen> {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-// A basic CupertinoListTile for this screen.
-class CupertinoListTile extends StatelessWidget {
-  final Widget title;
-  final Widget? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  const CupertinoListTile({super.key, required this.title, this.subtitle, this.trailing, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: CupertinoColors.separator)),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DefaultTextStyle(
-                    style: CupertinoTheme.of(context).textTheme.textStyle,
-                    child: title,
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    DefaultTextStyle(
-                      style: CupertinoTheme.of(context).textTheme.tabLabelTextStyle,
-                      child: subtitle!,
-                    ),
-                  ]
-                ],
-              ),
-            ),
-            if (trailing != null) ...[
-              const SizedBox(width: 8),
-              DefaultTextStyle(
-                style: CupertinoTheme.of(context).textTheme.tabLabelTextStyle,
-                child: trailing!,
-              ),
-            ]
-          ],
-        ),
       ),
     );
   }

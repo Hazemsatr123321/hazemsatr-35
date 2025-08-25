@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart' as custom;
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -50,12 +53,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Future<void> _updateBanStatus(String userId, bool isBanned) async {
     try {
-      // NOTE: This assumes a boolean column named `is_banned` exists in the `profiles` table.
       await _supabase.from('profiles').update({'is_banned': isBanned}).eq('id', userId);
        _showSuccessSnackBar(isBanned ? 'تم حظر المستخدم بنجاح.' : 'تم رفع الحظر عن المستخدم بنجاح.');
       _refreshUsers();
     } catch (e) {
-      _showErrorSnackBar('خطأ في تحديث حالة الحظر: $e. تأكد من وجود عمود is_banned في الجدول.');
+      _showErrorSnackBar('Failed to update ban status.');
     }
   }
 
@@ -139,7 +141,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
-              return CupertinoListTile(
+              return custom.CupertinoListTile(
                 title: Text(user.business_name ?? user.username ?? 'مستخدم غير معروف'),
                 subtitle: Text(user.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
                 leading: _buildUserStatusIcon(user),
@@ -161,59 +163,5 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       return const Icon(CupertinoIcons.shield_lefthalf_fill, color: CupertinoColors.activeOrange);
     }
     return const Icon(CupertinoIcons.person_alt);
-  }
-}
-
-class CupertinoListTile extends StatelessWidget {
-  final Widget title;
-  final Widget? subtitle;
-  final Widget? leading;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  const CupertinoListTile({super.key, required this.title, this.subtitle, this.leading, this.trailing, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: onTap != null ? CupertinoTheme.of(context).barBackgroundColor : null,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: CupertinoColors.separator)),
-        ),
-        child: Row(
-          children: [
-            if (leading != null) ...[
-              leading!,
-              const SizedBox(width: 16),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DefaultTextStyle(
-                    style: CupertinoTheme.of(context).textTheme.textStyle,
-                    child: title,
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    DefaultTextStyle(
-                      style: CupertinoTheme.of(context).textTheme.tabLabelTextStyle,
-                      child: subtitle!,
-                    ),
-                  ]
-                ],
-              ),
-            ),
-            if (trailing != null) ...[
-              const SizedBox(width: 8),
-              trailing!,
-            ]
-          ],
-        ),
-      ),
-    );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/product_model.dart';
+import 'package:smart_iraq/src/ui/widgets/cupertino_list_tile.dart' as custom;
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -95,7 +98,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
-              return CupertinoListTile(
+              return custom.CupertinoListTile(
                 title: Text(product.name),
                 subtitle: Text('بواسطة: ${product.userId}'),
                 leading: product.imageUrl != null
@@ -110,55 +113,6 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class CupertinoListTile extends StatelessWidget {
-  final Widget title;
-  final Widget? subtitle;
-  final Widget? leading;
-  final Widget? trailing;
-
-  const CupertinoListTile({super.key, required this.title, this.subtitle, this.leading, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: CupertinoColors.separator)),
-      ),
-      child: Row(
-        children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: 16),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DefaultTextStyle(
-                  style: CupertinoTheme.of(context).textTheme.textStyle,
-                  child: title,
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  DefaultTextStyle(
-                    style: CupertinoTheme.of(context).textTheme.tabLabelTextStyle,
-                    child: subtitle!,
-                  ),
-                ]
-              ],
-            ),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ]
-        ],
       ),
     );
   }

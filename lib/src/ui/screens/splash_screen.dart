@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';

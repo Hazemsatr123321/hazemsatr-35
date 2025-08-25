@@ -1,18 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:smart_iraq/src/core/services/notification_service.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/ui/screens/splash_screen.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+
+  // Setup timeago locales
+  timeago.setLocaleMessages('ar', timeago.ArMessages());
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,

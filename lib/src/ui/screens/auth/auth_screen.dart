@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
+import 'package:smart_iraq/src/ui/screens/auth/signup_screen.dart';
 import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -35,27 +37,24 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _signIn() async {
-    // A basic validation check
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-       _showErrorDialog('الرجاء إدخال البريد الإلكتروني وكلمة المرور.');
-      return;
-    }
-    setState(() => _isLoading = true);
-    try {
-      final supabase = Provider.of<SupabaseClient>(context, listen: false);
-      final response = await supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      if (mounted && response.user != null) {
-        _navigateToHome();
+    if (_formKey.currentState?.validate() ?? false) {
+      setState(() => _isLoading = true);
+      try {
+        final supabase = Provider.of<SupabaseClient>(context, listen: false);
+        final response = await supabase.auth.signInWithPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        if (mounted && response.user != null) {
+          _navigateToHome();
+        }
+      } on AuthException catch (e) {
+        if (mounted) {
+          _showErrorDialog(e.message);
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
       }
-    } on AuthException catch (e) {
-      if (mounted) {
-        _showErrorDialog(e.message);
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -77,13 +76,46 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _forgotPassword() {
-     showCupertinoDialog(
+    final emailController = TextEditingController();
+    showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('نسيت كلمة المرور'),
-        content: const Text('هذه الميزة قيد التطوير حالياً. يرجى التواصل مع الدعم الفني.'),
-        actions: [CupertinoDialogAction(isDefaultAction: true, child: const Text('موافق'), onPressed: () => Navigator.of(context).pop())],
-      )
+        title: const Text('إعادة تعيين كلمة المرور'),
+        content: Column(
+          children: [
+            const Text('أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.'),
+            const SizedBox(height: 16),
+            CupertinoTextField(
+              controller: emailController,
+              placeholder: 'البريد الإلكتروني',
+              keyboardType: TextInputType.emailAddress,
+            )
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('إلغاء'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            child: const Text('إرسال'),
+            onPressed: () async {
+              if (emailController.text.isNotEmpty) {
+                final supabase = Provider.of<SupabaseClient>(context, listen: false);
+                try {
+                  await supabase.auth.resetPasswordForEmail(emailController.text.trim());
+                  Navigator.of(context).pop(); // Close the dialog
+                  _showErrorDialog('تم إرسال رابط إعادة التعيين. يرجى التحقق من بريدك الإلكتروني.');
+                } on AuthException catch (e) {
+                   Navigator.of(context).pop();
+                  _showErrorDialog(e.message);
+                }
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -111,18 +143,37 @@ class _AuthScreenState extends State<AuthScreen> {
                 style: theme.textTheme.textStyle.copyWith(color: AppTheme.secondaryTextColor),
               ),
               const SizedBox(height: 48),
-              _buildTextField(
-                controller: _emailController,
-                placeholder: 'البريد الإلكتروني',
-                icon: CupertinoIcons.mail,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _passwordController,
-                placeholder: 'كلمة المرور',
-                icon: CupertinoIcons.lock,
-                obscureText: true,
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _buildTextField(
+                      controller: _emailController,
+                      placeholder: 'البريد الإلكتروني',
+                      icon: CupertinoIcons.mail,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (val) {
+                        if (val == null || val.isEmpty || !val.contains('@')) {
+                          return 'الرجاء إدخال بريد إلكتروني صحيح';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _passwordController,
+                      placeholder: 'كلمة المرور',
+                      icon: CupertinoIcons.lock,
+                      obscureText: true,
+                      validator: (val) {
+                        if (val == null || val.isEmpty) {
+                          return 'الرجاء إدخال كلمة المرور';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               Align(
@@ -149,8 +200,9 @@ class _AuthScreenState extends State<AuthScreen> {
                    CupertinoButton(
                      padding: const EdgeInsets.symmetric(horizontal: 4),
                      onPressed: () {
-                       // TODO: Navigate to a dedicated signup screen
-                       _showErrorDialog('ميزة إنشاء حساب جديد قيد التطوير.');
+                       Navigator.of(context).push(
+                         CupertinoPageRoute(builder: (context) => const SignUpScreen()),
+                       );
                      },
                      child: const Text('إنشاء حساب جديد', style: TextStyle(color: AppTheme.goldAccent)),
                    )
@@ -174,21 +226,79 @@ class _AuthScreenState extends State<AuthScreen> {
     required IconData icon,
     bool obscureText = false,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
-    return CupertinoTextField(
+    return CupertinoTextFormFieldRow(
       controller: controller,
       placeholder: placeholder,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      padding: const EdgeInsets.all(16),
       prefix: Padding(
         padding: const EdgeInsets.only(left: 16.0),
         child: Icon(icon, color: AppTheme.secondaryTextColor),
       ),
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.darkSurface,
         borderRadius: BorderRadius.circular(12),
       ),
+      validator: validator,
+    );
+  }
+}
+
+// Custom TextFormFieldRow to integrate validation with Cupertino styling
+class CupertinoTextFormFieldRow extends StatelessWidget {
+  final Widget prefix;
+  final String placeholder;
+  final TextEditingController controller;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final EdgeInsets padding;
+  final BoxDecoration decoration;
+  final String? Function(String?)? validator;
+
+  const CupertinoTextFormFieldRow({
+    super.key,
+    required this.prefix,
+    required this.placeholder,
+    required this.controller,
+    this.obscureText = false,
+    this.keyboardType,
+    required this.padding,
+    required this.decoration,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FormField<String>(
+      validator: validator,
+      builder: (FormFieldState<String> field) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CupertinoTextField(
+              controller: controller,
+              placeholder: placeholder,
+              keyboardType: keyboardType,
+              obscureText: obscureText,
+              padding: padding,
+              prefix: prefix,
+              decoration: decoration,
+              onChanged: (text) => field.didChange(text),
+            ),
+            if (field.hasError)
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, top: 4.0),
+                child: Text(
+                  field.errorText!,
+                  style: const TextStyle(color: CupertinoColors.systemRed, fontSize: 12),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

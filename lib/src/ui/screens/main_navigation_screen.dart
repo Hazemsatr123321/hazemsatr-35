@@ -47,16 +47,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           opacity: 0.3,
         ),
         items: [
-          _buildNavItem(Icons.home_rounded, 'الرئيسية'),
-          _buildNavItem(Icons.grid_view_rounded, 'الإعلانات'),
-          _buildNavItem(Icons.chat_bubble_rounded, 'الرسائل'),
-          _buildNavItem(Icons.person_rounded, 'حسابي'),
+          _buildNavItem(Icons.home_rounded, 'الرئيسية', isGuest: widget.isGuest, index: 0),
+          _buildNavItem(Icons.grid_view_rounded, 'الإعلانات', isGuest: widget.isGuest, index: 1),
+          _buildNavItem(Icons.chat_bubble_rounded, 'الرسائل', isGuest: widget.isGuest, index: 2),
+          _buildNavItem(Icons.person_rounded, 'حسابي', isGuest: widget.isGuest, index: 3),
         ],
         fabLocation: StylishBarFabLocation.center,
         hasNotch: true,
         currentIndex: _selectedIndex,
         backgroundColor: AppTheme.darkSurface,
         onTap: (index) {
+          if (widget.isGuest && (index == 2 || index == 3)) {
+            // Optionally, show a login prompt
+            return;
+          }
           setState(() {
             _selectedIndex = index;
             _pageController.jumpToPage(index);
@@ -99,12 +103,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  BottomBarItem _buildNavItem(IconData icon, String title) {
+  BottomBarItem _buildNavItem(IconData icon, String title, {bool isGuest = false, required int index}) {
+    final bool isDisabled = isGuest && (index == 2 || index == 3);
     return BottomBarItem(
-      icon: Icon(icon),
+      icon: Icon(icon, color: isDisabled ? AppTheme.secondaryTextColor.withOpacity(0.5) : null),
       title: Text(title),
       selectedColor: AppTheme.goldAccent,
-      unSelectedColor: AppTheme.secondaryTextColor,
+      unSelectedColor: isDisabled ? AppTheme.secondaryTextColor.withOpacity(0.5) : AppTheme.secondaryTextColor,
       backgroundColor: AppTheme.goldAccent,
     );
   }

@@ -1,46 +1,43 @@
 class Profile {
   final String id;
-  final String? username;
   final DateTime? updatedAt;
+  final String? username;
 
   // B2B Fields
-  final String? business_type; // 'wholesaler' or 'retailer'
-  final String? verification_status; // 'pending', 'approved', 'rejected'
   final String? business_name;
-  final String? business_address;
-  final String? role;
+  final String? business_type; // 'wholesaler' or 'shop_owner'
 
-  // Review Fields
-  final double average_rating;
-  final int rating_count;
+  // Auth/Admin Fields
+  final String? role;
+  final bool? is_banned;
+
+  // Reputation Fields
+  final double? reputation_score;
+  final String? seller_tier;
 
   Profile({
     required this.id,
-    this.username,
     this.updatedAt,
-    this.business_type,
-    this.verification_status,
+    this.username,
     this.business_name,
-    this.business_address,
+    this.business_type,
     this.role,
-    this.average_rating = 0.0,
-    this.rating_count = 0,
+    this.is_banned,
+    this.reputation_score,
+    this.seller_tier,
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
-      id: json['id'] as String,
-      username: json['username'] as String?,
-      updatedAt: json['updated_at'] == null
-          ? null
-          : DateTime.parse(json['updated_at'] as String),
-      business_type: json['business_type'] as String?,
-      verification_status: json['verification_status'] as String?,
-      business_name: json['business_name'] as String?,
-      business_address: json['business_address'] as String?,
-      role: json['role'] as String?,
-      average_rating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      rating_count: json['rating_count'] as int? ?? 0,
+      id: json['id'],
+      updatedAt: json['updated_at'] == null ? null : DateTime.parse(json['updated_at']),
+      username: json['username'],
+      business_name: json['business_name'],
+      business_type: json['business_type'],
+      role: json['role'],
+      is_banned: json['is_banned'],
+      reputation_score: (json['reputation_score'] as num?)?.toDouble(),
+      seller_tier: json['seller_tier'],
     );
   }
 }
