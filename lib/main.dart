@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:smart_iraq/src/core/services/notification_service.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
@@ -22,6 +25,9 @@ Future<void> main() async {
         Provider<SupabaseClient>(create: (_) => Supabase.instance.client),
         Provider<ChatRepository>(create: (context) => SupabaseChatRepository(context.read<SupabaseClient>())),
         Provider<ProductRepository>(create: (context) => SupabaseProductRepository(context.read<SupabaseClient>())),
+        ChangeNotifierProvider<NotificationService>(
+          create: (context) => NotificationService(context.read<SupabaseClient>()),
+        ),
       ],
       child: const SmartIraqApp(),
     ),

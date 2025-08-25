@@ -6,7 +6,9 @@ import 'package:smart_iraq/src/repositories/product_repository.dart';
 import 'package:smart_iraq/src/ui/screens/rfq/browse_rfqs_screen.dart';
 import 'package:smart_iraq/src/ui/screens/rfq/create_rfq_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/filter_modal.dart';
+import 'package:smart_iraq/src/ui/widgets/notification_icon.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
+import 'package.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 
 class AdsScreen extends StatefulWidget {
@@ -23,6 +25,7 @@ class _AdsScreenState extends State<AdsScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        leading: const NotificationIcon(),
         middle: CupertinoSegmentedControl<int>(
           groupValue: _selectedSegment,
           onValueChanged: (int newValue) {

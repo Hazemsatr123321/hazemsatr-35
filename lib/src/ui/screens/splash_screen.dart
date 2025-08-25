@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_iraq/src/core/services/notification_service.dart';
 import 'package:smart_iraq/src/ui/screens/auth/auth_screen.dart';
 import 'package:smart_iraq/src/ui/screens/main_navigation_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,6 +36,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Since verification is removed, we just check for a session.
     if (session != null) {
+      // Initialize the notification service after user is confirmed to be logged in
+      await Provider.of<NotificationService>(context, listen: false).init();
       _navigateToHome();
     } else {
       _navigateToAuth();

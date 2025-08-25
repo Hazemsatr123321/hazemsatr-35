@@ -10,6 +10,7 @@ import 'package:smart_iraq/src/ui/screens/edit_product_screen.dart';
 import 'package:smart_iraq/src/ui/screens/profile/my_purchases_screen.dart';
 import 'package:smart_iraq/src/ui/screens/reviews_list_screen.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
+import 'package:smart_iraq/src/ui/widgets/notification_icon.dart';
 import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -117,6 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return CustomScrollView(
             slivers: [
               CupertinoSliverNavigationBar(
+                leading: const NotificationIcon(),
                 largeTitle: Text(isAdmin ? 'لوحة تحكم المدير' : 'ملفي الشخصي'),
                 trailing: CupertinoButton(
                   padding: EdgeInsets.zero,

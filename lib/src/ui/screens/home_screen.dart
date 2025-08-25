@@ -9,6 +9,7 @@ import 'package:smart_iraq/src/ui/widgets/product_card.dart';
 import 'package:smart_iraq/src/ui/widgets/managed_ad_card.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:smart_iraq/src/ui/widgets/notification_icon.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
 
@@ -105,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
               slivers: [
                 const CupertinoSliverNavigationBar(
                   largeTitle: Text('سوق العراق الذكي'),
+                  trailing: NotificationIcon(),
                 ),
                 SliverList(
                   delegate: SliverChildListDelegate([
