@@ -30,19 +30,21 @@ class NotificationService extends ChangeNotifier {
 
     // Set up real-time subscription
     _channel = _supabase.channel('public:notifications:for-user-$userId');
-    _channel!.on(
-      RealtimeListenTypes.postgresChanges,
-      ChannelFilter(
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: 'recipient_id=eq.$userId',
-      ),
-      (payload, [ref]) {
-        final newNotification = Notification.fromJson(payload['new']);
-        _handleNewNotification(newNotification);
-      },
-    ).subscribe();
+    _channel!
+        .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'recipient_id',
+              value: userId,
+            ),
+            callback: (payload) {
+              final newNotification = Notification.fromJson(payload.newRecord);
+              _handleNewNotification(newNotification);
+            })
+        .subscribe();
   }
 
   void _handleNewNotification(Notification newNotification) {
