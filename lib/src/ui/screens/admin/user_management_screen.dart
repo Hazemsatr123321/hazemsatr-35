@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/models/profile_model.dart';
 import 'package:smart_iraq/src/ui/widgets/custom_loading_indicator.dart';
@@ -15,11 +14,6 @@ class UserManagementScreen extends StatefulWidget {
 class _UserManagementScreenState extends State<UserManagementScreen> {
   late Future<List<Profile>> _usersFuture;
   late SupabaseClient _supabase;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void didChangeDependencies() {
@@ -42,62 +36,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     setState(() {
       _usersFuture = _fetchUsers();
     });
-  }
-
-  Future<void> _updateUserStatus(String userId, String newStatus) async {
-    try {
-      await _supabase.from('profiles').update({'verification_status': newStatus}).eq('id', userId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم تحديث حالة المستخدم بنجاح.'), backgroundColor: Colors.green),
-      );
-      _refreshUsers();
-    } catch (e) {
-       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحديث الحالة: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  void _showStatusActionSheet(Profile user) {
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (BuildContext context) => CupertinoActionSheet(
-        title: Text('تغيير حالة "${user.business_name ?? user.username}"'),
-        message: Text('الحالة الحالية: ${user.verification_status}'),
-        actions: <CupertinoActionSheetAction>[
-          CupertinoActionSheetAction(
-            child: const Text('الموافقة على الحساب (approved)'),
-            onPressed: () {
-              Navigator.pop(context);
-              _updateUserStatus(user.id, 'approved');
-            },
-          ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            child: const Text('رفض الحساب (rejected)'),
-            onPressed: () {
-              Navigator.pop(context);
-              _updateUserStatus(user.id, 'rejected');
-            },
-          ),
-           CupertinoActionSheetAction(
-            child: const Text('جعله قيد المراجعة (pending)'),
-            onPressed: () {
-              Navigator.pop(context);
-              _updateUserStatus(user.id, 'pending');
-            },
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          child: const Text('إلغاء'),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
-    );
   }
 
   @override
@@ -129,13 +67,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
-              return Material( // Material is needed for InkWell ripple effect on tap
-                child: CupertinoListTile(
-                  title: Text(user.business_name ?? user.username ?? 'مستخدم غير معروف'),
-                  subtitle: Text(user.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
-                  leading: _buildStatusIndicator(user.verification_status),
-                  trailing: const Icon(CupertinoIcons.forward),
-                  onTap: () => _showStatusActionSheet(user),
+              return CupertinoListTile(
+                title: Text(user.business_name ?? user.username ?? 'مستخدم غير معروف'),
+                subtitle: Text(user.business_type == 'wholesaler' ? 'تاجر جملة' : 'صاحب محل'),
+                leading: Icon(
+                  user.role == 'admin' ? CupertinoIcons.shield_lefthalf_fill : CupertinoIcons.person_alt,
+                  color: user.role == 'admin' ? CupertinoColors.activeOrange : null,
                 ),
               );
             },
@@ -144,23 +81,49 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       ),
     );
   }
+}
 
-  Widget _buildStatusIndicator(String? status) {
-    Color color;
-    IconData icon;
-    switch (status) {
-      case 'approved':
-        color = CupertinoColors.activeGreen;
-        icon = CupertinoIcons.check_mark_circled_solid;
-        break;
-      case 'rejected':
-        color = CupertinoColors.destructiveRed;
-        icon = CupertinoIcons.xmark_octagon_fill;
-        break;
-      default: // pending
-        color = CupertinoColors.activeOrange;
-        icon = CupertinoIcons.hourglass;
-    }
-    return Icon(icon, color: color);
+// A basic CupertinoListTile for this screen since the custom one was causing issues.
+class CupertinoListTile extends StatelessWidget {
+  final Widget title;
+  final Widget? subtitle;
+  final Widget? leading;
+
+  const CupertinoListTile({super.key, required this.title, this.subtitle, this.leading});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: CupertinoColors.separator)),
+      ),
+      child: Row(
+        children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 16),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DefaultTextStyle(
+                  style: CupertinoTheme.of(context).textTheme.textStyle,
+                  child: title,
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  DefaultTextStyle(
+                    style: CupertinoTheme.of(context).textTheme.tabLabelTextStyle,
+                    child: subtitle!,
+                  ),
+                ]
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

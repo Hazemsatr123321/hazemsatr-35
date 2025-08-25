@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:smart_iraq/src/core/providers/theme_provider.dart';
 import 'package:smart_iraq/src/core/theme/app_theme.dart';
 import 'package:smart_iraq/src/repositories/chat_repository.dart';
 import 'package:smart_iraq/src/repositories/product_repository.dart';
@@ -21,7 +19,6 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         Provider<SupabaseClient>(create: (_) => Supabase.instance.client),
         Provider<ChatRepository>(create: (context) => SupabaseChatRepository(context.read<SupabaseClient>())),
         Provider<ProductRepository>(create: (context) => SupabaseProductRepository(context.read<SupabaseClient>())),
@@ -36,17 +33,11 @@ class SmartIraqApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return CupertinoApp(
-          title: 'العراق الذكي',
-          theme: themeProvider.themeMode == ThemeMode.dark
-              ? AppTheme.darkCupertinoTheme
-              : AppTheme.lightCupertinoTheme,
-          home: const SplashScreen(),
-          debugShowCheckedModeBanner: false,
-        );
-      },
+    return CupertinoApp(
+      title: 'العراق الذكي',
+      theme: AppTheme.darkCupertinoTheme,
+      home: const SplashScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
