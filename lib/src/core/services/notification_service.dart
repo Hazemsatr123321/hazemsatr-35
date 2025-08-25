@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationService extends ChangeNotifier {
   final SupabaseClient _supabase;
-  StreamSubscription<List<Map<String, dynamic>>>? _subscription;
+  RealtimeChannel? _channel;
 
   List<Notification> _notifications = [];
   List<Notification> get notifications => _notifications;
@@ -29,15 +29,20 @@ class NotificationService extends ChangeNotifier {
     notifyListeners();
 
     // Set up real-time subscription
-    _subscription = _supabase
-        .from('notifications:recipient_id=eq.$userId')
-        .stream(primaryKey: ['id'])
-        .listen((payload) {
-          // This gives a list of all matching rows. We need to find the new one.
-          // A simple approach is to refetch all, but a more optimized one is to find the new record.
-          final newNotification = Notification.fromJson(payload.first);
-          _handleNewNotification(newNotification);
-        });
+    _channel = _supabase.channel('public:notifications:for-user-$userId');
+    _channel!.on(
+      RealtimeListenTypes.postgresChanges,
+      ChannelFilter(
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: 'recipient_id=eq.$userId',
+      ),
+      (payload, [ref]) {
+        final newNotification = Notification.fromJson(payload['new']);
+        _handleNewNotification(newNotification);
+      },
+    ).subscribe();
   }
 
   void _handleNewNotification(Notification newNotification) {
@@ -77,7 +82,9 @@ class NotificationService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _subscription?.cancel();
+    if (_channel != null) {
+      _supabase.removeChannel(_channel!);
+    }
     super.dispose();
   }
 }
