@@ -4,6 +4,7 @@ import 'package:smart_iraq/src/ui/screens/admin/donation_methods_management_scre
 import 'package:smart_iraq/src/ui/screens/admin/feature_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/managed_ads_management_screen.dart';
 import 'package:smart_iraq/src/ui/screens/admin/user_management_screen.dart';
+import 'package:smart_iraq/src/ui/screens/admin/product_management_screen.dart';
 
 class AdminPanelScreen extends StatelessWidget {
   const AdminPanelScreen({super.key});
@@ -28,10 +29,19 @@ class AdminPanelScreen extends StatelessWidget {
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 58.0),
-            child: Container(height: 0.5, color: CupertinoColors.separator.resolveFrom(context)),
+          const _Divider(),
+          custom.CupertinoListTile(
+            title: const Text('إدارة كل الإعلانات'),
+            subtitle: const Text('عرض وحذف إعلانات المستخدمين'),
+            leading: const Icon(CupertinoIcons.cube_box_fill),
+            trailing: const Icon(CupertinoIcons.forward),
+            onTap: () {
+              Navigator.of(context).push(
+                CupertinoPageRoute(builder: (context) => const ProductManagementScreen()),
+              );
+            },
           ),
+          const _Divider(),
           custom.CupertinoListTile(
             title: const Text('تمييز الإعلانات'),
             subtitle: const Text('اختيار إعلانات المستخدمين لعرضها بشكل مميز'),
@@ -43,10 +53,7 @@ class AdminPanelScreen extends StatelessWidget {
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 58.0),
-            child: Container(height: 0.5, color: CupertinoColors.separator.resolveFrom(context)),
-          ),
+          const _Divider(),
           custom.CupertinoListTile(
             title: const Text('إدارة طرق الدفع'),
             subtitle: const Text('التحكم بحسابات التبرع اليدوية'),
@@ -58,10 +65,7 @@ class AdminPanelScreen extends StatelessWidget {
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 58.0),
-            child: Container(height: 0.5, color: CupertinoColors.separator.resolveFrom(context)),
-          ),
+          const _Divider(),
           custom.CupertinoListTile(
             title: const Text('إدارة الإعلانات المدارة'),
             subtitle: const Text('التحكم بالإعلانات التي تظهر في الصفحة الرئيسية'),
@@ -75,6 +79,17 @@ class AdminPanelScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 58.0),
+      child: Container(height: 0.5, color: CupertinoColors.separator.resolveFrom(context)),
     );
   }
 }
