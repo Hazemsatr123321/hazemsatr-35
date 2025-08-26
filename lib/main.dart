@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/services/notification_service.dart';
@@ -41,9 +41,28 @@ class SmartIraqApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
+    return MaterialApp(
       title: 'العراق الذكي',
-      theme: AppTheme.darkCupertinoTheme,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: AppTheme.goldAccent,
+        scaffoldBackgroundColor: AppTheme.charcoalBackground,
+        colorScheme: const ColorScheme.dark(
+          primary: AppTheme.goldAccent,
+          secondary: AppTheme.goldAccent,
+          surface: AppTheme.darkSurface,
+          background: AppTheme.charcoalBackground,
+        ),
+        textTheme: AppTheme.darkCupertinoTheme.textTheme.textStyle != null
+            ? GoogleFonts.tajawalTextTheme(
+                ThemeData.dark().textTheme.apply(
+                      bodyColor: AppTheme.lightTextColor,
+                      displayColor: AppTheme.lightTextColor,
+                    ),
+              )
+            : ThemeData.dark().textTheme,
+        useMaterial3: true,
+      ),
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
