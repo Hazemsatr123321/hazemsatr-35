@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_iraq/src/core/services/notification_service.dart';
@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void _navigateToAuth() {
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        CupertinoPageRoute(builder: (context) => const AuthScreen()),
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
         (route) => false,
       );
     }
@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void _navigateToHome() {
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        CupertinoPageRoute(builder: (context) => const MainNavigationScreen()),
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
         (route) => false,
       );
     }
@@ -63,12 +63,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
+    return Scaffold(
       backgroundColor: AppTheme.charcoalBackground,
-      child: Center(
+      body: Center(
         child: Text(
           'سوق العراق الذكي',
-          style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             shadows: [
               Shadow(
                 color: AppTheme.goldAccent.withOpacity(0.3),
