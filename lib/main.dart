@@ -10,8 +10,8 @@ Future<void> main() async {
   // Initialize Supabase
   // Initialize Supabase with user-provided credentials
   await Supabase.initialize(
-    url: 'https://mfotgcymwpvbecqfghpg.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mb3RnY3ltd3B2YmVjcWZnaHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNjE5NzAsImV4cCI6MjA3MDkzNzk3MH0.rYtnVSXRXx9VFFY9iPTWTNX5DN3VvrThaAbkV0hLQzs',
+    url: 'https://aqtwasxdpkrkavqworwm.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxdHdhc3hkcGtya2F2cXdvcndtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxNjk4NzUsImV4cCI6MjA3MTc0NTg3NX0.aIL3uIycOHqhlh_2xXncOFSHmDK-_yor7eWv8SxOu_w',
   );
 
   runApp(const SmartIraqApp());

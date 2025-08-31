@@ -187,11 +187,8 @@ class _HomeScreenState extends State<HomeScreen> {
         future: _feedFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return GridView.builder(
-              padding: const EdgeInsets.all(12.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
-              ),
+            return ListView.builder(
+              padding: const EdgeInsets.all(8.0),
               itemCount: 8,
               itemBuilder: (context, index) => const ProductCardShimmer(),
             );
@@ -200,11 +197,8 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('لا توجد إعلانات لعرضها حالياً.'));
 
           final feedItems = snapshot.data!;
-          return GridView.builder(
-            padding: const EdgeInsets.all(12.0),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, crossAxisSpacing: 12.0, mainAxisSpacing: 12.0, childAspectRatio: 0.7,
-            ),
+          return ListView.builder(
+            padding: const EdgeInsets.all(8.0),
             itemCount: feedItems.length,
             itemBuilder: (context, index) {
               final item = feedItems[index];
